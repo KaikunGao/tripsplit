@@ -3,7 +3,7 @@ import { money } from "@/lib/format";
 import { memberName } from "@/lib/settle";
 import type { Expense, ProposedChange, Trip } from "@/lib/types";
 
-const LABEL: Record<string, string> = { amount: "金额", payerId: "付款人", participantIds: "参与人", category: "分类", note: "备注", occurredAt: "时间" };
+const LABEL: Record<string, string> = { amount: "金额", payerId: "付款人", participantIds: "参与人", category: "分类", note: "备注", occurredAt: "时间", treat: "请客", currency: "币种", rate: "汇率", split: "分摊" };
 
 /** 修改预览：逐字段 before → after，用户看清楚再确认。 */
 export function ChangePreview({ trip, expense, change, onApply, onIgnore, applied }: { trip: Trip; expense: Expense | undefined; change: ProposedChange; onApply: () => void; onIgnore: () => void; applied?: "applied" | "ignored" }) {
@@ -13,6 +13,8 @@ export function ChangePreview({ trip, expense, change, onApply, onIgnore, applie
     if (k === "amount") return money(v as number, expense.currency);
     if (k === "payerId") return memberName(trip.members, v as string);
     if (k === "participantIds") return (v as string[]).map((id) => memberName(trip.members, id)).join("、") || "（空）";
+    if (k === "treat") return v ? "是" : "否";
+    if (typeof v === "object") return JSON.stringify(v);
     return String(v);
   };
   const rows = change.action === "delete" ? [] : Object.entries(change.patch ?? {}).filter(([k, v]) => JSON.stringify((expense as Record<string, unknown>)[k]) !== JSON.stringify(v));

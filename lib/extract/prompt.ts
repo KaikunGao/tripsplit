@@ -4,7 +4,7 @@ import { CATEGORIES } from "../types";
 import { todayLocal } from "../format";
 import type { ExtractRequest } from "./schema";
 
-export function systemPrompt(trip: Trip): string {
+export function systemPrompt(trip: Trip, habits: string[] = []): string {
   const self = trip.members.find((m) => m.id === trip.selfMemberId)?.name;
   return [
     "你是多人旅行 AA 记账助手的录入解析器。输入是一段文字、一张支付截图或一段语音转写，任务是抽取一笔消费的结构化字段。",
@@ -21,6 +21,9 @@ export function systemPrompt(trip: Trip): string {
     "- 金额看不清或有多个候选（如原价/实付）时取实付；仍不确定则 amount 为 null 并追问。",
     "- 用户补充回答（supplement）优先级最高，用它修正上一轮结果。",
     "- 不是消费（聊天、风景照、非支付截图）时 is_expense=false 并说明原因。",
+    "- 请客：出现'请客/我请/X 请大家'时 treat=true，participants 列出被请的人、不含付款人；普通 AA 时 treat=false 且付款人通常也在参与人里。",
+    `- 币种：出现外币（日元/円/¥JPY、美元/$、欧元/€、泰铢/฿、港币、韩元、新台币等）时 currency 填 ISO 代码（JPY/USD/EUR/THB/HKD/KRW/TWD），金额保持原币；没提币种按 ${trip.currency}。`,
+    habits.length ? `\n已知的个人习惯（用于推断付款人/参与人，但置信度仍按证据给）：\n${habits.map((h) => "- " + h).join("\n")}` : "",
   ]
     .filter(Boolean)
     .join("\n");

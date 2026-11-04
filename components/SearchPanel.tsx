@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { ChangePreview } from "@/components/ChangePreview";
 import { ExpenseCard } from "@/components/ExpenseCard";
-import { Badge, Section, Spinner } from "@/components/ui";
+import { Badge, Empty, Icon, Section, Skeleton, Spinner } from "@/components/ui";
+import { printReport } from "@/lib/export";
 import { money } from "@/lib/format";
 import type { aggregate } from "@/lib/report";
 import type { SearchResult } from "@/lib/search/answer";
@@ -82,6 +83,21 @@ export function SearchPanel({ trip, expenses }: { trip: Trip; expenses: Expense[
         {err && <p className="mt-2 text-sm text-danger-700">{err}</p>}
       </Section>
 
+      {busy && (
+        <div className="card p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm text-ink-600">
+            <Spinner /> 先把问题转成筛选条件，再在账本里做语义检索…
+          </div>
+          <Skeleton lines={3} />
+        </div>
+      )}
+
+      {expenses.length === 0 && !res && (
+        <div className="card">
+          <Empty icon={<Icon name="search" className="h-6 w-6" />} title="账本还没有内容" hint="先录几笔消费，再来用一句话找账、改账或要统计。" compact />
+        </div>
+      )}
+
       {res && (
         <Section
           title="回答"
@@ -142,12 +158,21 @@ export function SearchPanel({ trip, expenses }: { trip: Trip; expenses: Expense[
       <Section
         title="消费报告"
         right={
-          <button className="btn btn-ghost" disabled={reportBusy} onClick={genReport}>
-            {reportBusy ? <Spinner /> : null} 生成报告
-          </button>
+          <span className="flex gap-1.5">
+            {report && (
+              <button className="btn btn-ghost btn-sm" onClick={() => printReport(trip, expenses, report.aggregate, report.narrative)}>
+                导出 PDF
+              </button>
+            )}
+            <button className="btn btn-ghost btn-sm" disabled={reportBusy || expenses.length === 0} onClick={genReport}>
+              {reportBusy ? <Spinner /> : null} {report ? "重新生成" : "生成报告"}
+            </button>
+          </span>
         }
       >
-        {!report ? (
+        {reportBusy ? (
+          <Skeleton lines={4} />
+        ) : !report ? (
           <p className="text-sm text-ink-400">按分类 / 按天 / 按人聚合，并由模型写成一段小结。数字来自确定性聚合，模型只负责措辞。</p>
         ) : (
           <div className="space-y-3 text-sm">

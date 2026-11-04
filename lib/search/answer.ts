@@ -29,6 +29,7 @@ const AnswerSchema = z.object({
 
 export type SearchResult = {
   ok: true;
+  usage?: { input: number; output: number };
   filters: Filters & { intent: string };
   relaxed: boolean;
   hits: { id: string; score: number; matched: string[]; text: string }[];
@@ -79,8 +80,12 @@ export async function search(snap: LedgerSnapshot, query: string): Promise<Searc
   answer.citations = answer.citations.map((x) => x.replace(/^#/, "")).filter((x) => ids.has(x));
   answer.proposed_changes = answer.proposed_changes.filter((p) => expenses.some((e) => e.id === p.expenseId));
 
+  const tok = (r: { usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens?: number | null; cache_creation_input_tokens?: number | null } }) => ({ input: r.usage.input_tokens + (r.usage.cache_read_input_tokens ?? 0) + (r.usage.cache_creation_input_tokens ?? 0), output: r.usage.output_tokens });
+  const usage = { input: tok(q).input + tok(a).input, output: tok(q).output + tok(a).output };
+
   return {
     ok: true,
+    usage,
     filters: { ...filters, intent: filters.intent },
     relaxed,
     hits: hits.map((h) => ({ id: h.expense.id, score: Math.round(h.score * 1000) / 1000, matched: h.matched, text: renderExpense(trip, h.expense) })),

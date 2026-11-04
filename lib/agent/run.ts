@@ -29,6 +29,7 @@ const FindingSchema = z.object({
           category: z.string().nullable(),
           note: z.string().nullable(),
           occurredAt: z.string().nullable(),
+          treat: z.boolean().nullable(),
         })
         .nullable(),
     })
@@ -55,8 +56,13 @@ function systemPrompt(snap: LedgerSnapshot): string {
     "6. 修改建议里的 payerId/participantIds 必须用成员 id；删除重复项时保留证据更完整（有截图/置信度更高）的那条。",
     "7. 核查完毕后调用 submit_findings 提交结论；这是唯一的结束方式。",
     "",
-    `旅行：${trip.name}（${trip.startDate ?? "?"} 至 ${trip.endDate ?? "?"}），成员 id 对照：${trip.members.map((m) => `${m.name}=${m.id}`).join("，")}`,
-  ].join("\n");
+    `旅行：${trip.name}（${trip.startDate ?? "?"} 至 ${trip.endDate ?? "?"}，本币 ${trip.currency}），成员 id 对照：${trip.members.map((m) => `${m.name}=${m.id}`).join("，")}`,
+    "账目字段说明：treat=true 表示请客（付款人有意不分摊，不算异常）；split 是不均摊规则；currency/rate 是外币与折算汇率，结算按本币。",
+    trip.rules?.length ? `\n用户已确认的本次旅行规则（这些情况不要再报）：\n${trip.rules.map((r) => "- " + r).join("\n")}` : "",
+    snap.habits?.length ? `\n用户的长期习惯（可作为判断依据）：\n${snap.habits.map((h) => "- " + h).join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export async function reconcile(snap: LedgerSnapshot): Promise<ReconcileResult> {
@@ -146,6 +152,7 @@ function normalize(snap: LedgerSnapshot, findings: z.infer<typeof FindingSchema>
         if (pc.patch.category) raw.category = pc.patch.category;
         if (pc.patch.note) raw.note = pc.patch.note;
         if (pc.patch.occurredAt && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(pc.patch.occurredAt)) raw.occurredAt = pc.patch.occurredAt;
+        if (pc.patch.treat != null) raw.treat = pc.patch.treat;
         const p = ExpensePatchSchema.safeParse(raw);
         if (p.success && Object.keys(p.data).length) proposed = { action: "update", expenseId: pc.expenseId, patch: p.data, reason: f.suggestion };
       }

@@ -1,0 +1,118 @@
+/**
+ * 录入解析评测：对 eval/cases.json 逐条调 extract()，按字段算准确率与成本。
+ * 运行：npm run eval  （读取 .env.local 里的 ANTHROPIC_API_KEY；TRIPSPLIT_MODEL / TRIPSPLIT_EFFORT 可覆盖）
+ * 结果写到 eval/results/<时间>.json；配置了数据库时同时写入 evals 表，/admin 能看历史。
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { extract } from "../lib/extract/extract";
+import { SEED } from "../lib/seed";
+import type { Category } from "../lib/types";
+
+// 手动加载 .env.local（tsx 不会自动读）
+if (existsSync(".env.local")) {
+  for (const line of readFileSync(".env.local", "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^"|"$/g, "");
+  }
+}
+
+type Case = { id: string; kind: "text" | "voice"; text: string; expected: { decision: "auto" | "ask" | "reject"; amount: number | null; currency?: string; payer: string | null; participants: string[] | null; category: Category | null; treat: boolean } };
+
+async function main() {
+  const { MODEL } = await import("../lib/claude");
+  const { estimateCost } = await import("../lib/telemetry");
+  const { cases } = JSON.parse(readFileSync("eval/cases.json", "utf8")) as { cases: Case[] };
+  const only = process.argv[2];
+  const list = only ? cases.filter((c) => c.id === only) : cases;
+  const trip = SEED().trips[0];
+  const nameOf = (id?: string) => trip.members.find((m) => m.id === id)?.name ?? null;
+
+  const rows: Record<string, unknown>[] = [];
+  const acc = { decision: 0, amount: 0, payer: 0, participants: 0, category: 0, treat: 0 };
+  const n = { decision: 0, amount: 0, payer: 0, participants: 0, category: 0, treat: 0 };
+  let input = 0;
+  let output = 0;
+  const t0 = Date.now();
+
+  for (const c of list) {
+    const started = Date.now();
+    try {
+      const r = await extract({ trip, kind: c.kind, text: c.text });
+      input += r.usage?.input ?? 0;
+      output += r.usage?.output ?? 0;
+      const got = {
+        decision: r.decision,
+        amount: r.draft.amount ?? null,
+        currency: r.draft.currency,
+        payer: nameOf(r.draft.payerId),
+        participants: (r.draft.participantIds ?? []).map((id) => nameOf(id)).sort(),
+        category: r.draft.category ?? null,
+        treat: !!r.draft.treat,
+      };
+      const e = c.expected;
+      const ok = {
+        decision: got.decision === e.decision,
+        amount: e.amount == null ? null : got.amount === e.amount,
+        payer: e.payer === null ? null : got.payer === e.payer,
+        participants: e.participants === null ? null : JSON.stringify(got.participants) === JSON.stringify([...e.participants].sort()),
+        category: e.category === null ? null : got.category === e.category,
+        treat: got.treat === e.treat,
+      };
+      for (const k of Object.keys(ok) as (keyof typeof ok)[]) {
+        if (ok[k] === null) continue;
+        n[k]++;
+        if (ok[k]) acc[k]++;
+      }
+      const pass = Object.values(ok).every((v) => v !== false);
+      rows.push({ id: c.id, pass, ms: Date.now() - started, text: c.text, expected: e, got, ok });
+      console.log(`${pass ? "✓" : "✗"} ${c.id} ${c.text.slice(0, 28).padEnd(30)} ${got.decision.padEnd(6)} ${String(got.amount).padEnd(6)} ${String(got.payer).padEnd(4)} ${got.participants.join("/")}${!pass ? "   ← " + Object.entries(ok).filter(([, v]) => v === false).map(([k]) => k).join(",") : ""}`);
+    } catch (err) {
+      rows.push({ id: c.id, pass: false, error: err instanceof Error ? err.message : String(err) });
+      console.log(`✗ ${c.id} ERROR ${err instanceof Error ? err.message : err}`);
+      n.decision++;
+    }
+  }
+
+  const pct = (k: keyof typeof acc) => (n[k] ? Math.round((acc[k] / n[k]) * 1000) / 10 : null);
+  const summary = {
+    at: new Date().toISOString(),
+    model: MODEL,
+    effort: process.env.TRIPSPLIT_EFFORT ?? "medium",
+    cases: list.length,
+    passed: rows.filter((r) => r.pass).length,
+    decision_acc: pct("decision"),
+    amount_acc: pct("amount"),
+    payer_acc: pct("payer"),
+    participants_acc: pct("participants"),
+    category_acc: pct("category"),
+    treat_acc: pct("treat"),
+    tokens: { input, output },
+    cost_usd: estimateCost(MODEL, input, output),
+    ms: Date.now() - t0,
+  };
+  console.log("\n" + JSON.stringify(summary, null, 2));
+
+  mkdirSync("eval/results", { recursive: true });
+  const file = `eval/results/${summary.at.replace(/[:.]/g, "-")}.json`;
+  writeFileSync(file, JSON.stringify({ summary, rows }, null, 2));
+  console.log(`结果已写入 ${file}`);
+
+  try {
+    const { ready } = await import("../lib/db");
+    const d = await ready();
+    if (d) {
+      await d.execute({
+        sql: "INSERT INTO evals (at, model, cases, decision_acc, amount_acc, payer_acc, participants_acc, category_acc, cost_usd, detail) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        args: [summary.at, `${MODEL}/${summary.effort}`, summary.cases, summary.decision_acc ?? 0, summary.amount_acc ?? 0, summary.payer_acc ?? 0, summary.participants_acc ?? 0, summary.category_acc ?? 0, summary.cost_usd, JSON.stringify(rows.filter((r) => !r.pass).map((r) => r.id))],
+      });
+      console.log("已写入数据库 evals 表");
+    }
+  } catch (e) {
+    console.warn("写入数据库失败（不影响结果文件）", e instanceof Error ? e.message : e);
+  }
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

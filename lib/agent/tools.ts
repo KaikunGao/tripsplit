@@ -12,6 +12,10 @@ const brief = (snap: LedgerSnapshot, e: Expense) => ({
   id: e.id,
   time: e.occurredAt.slice(0, 16),
   amount: e.amount,
+  currency: e.currency,
+  rate: e.rate ?? null,
+  treat: e.treat ?? false,
+  split: e.split ?? null,
   category: e.category,
   note: e.note,
   payer: memberName(snap.trip.members, e.payerId),
@@ -61,7 +65,7 @@ export const toolImpl: Record<string, (ctx: ToolCtx, input: Record<string, unkno
       if (e.participantIds.length === 0) issues.push({ id: e.id, problem: "participants_empty" });
       if (!memberIds.has(e.payerId)) issues.push({ id: e.id, problem: "payer_not_member" });
       if (e.participantIds.some((id) => !memberIds.has(id))) issues.push({ id: e.id, problem: "participant_not_member" });
-      if (e.participantIds.length > 0 && !e.participantIds.includes(e.payerId)) issues.push({ id: e.id, problem: "payer_not_in_participants" });
+      if (e.participantIds.length > 0 && !e.participantIds.includes(e.payerId) && !e.treat) issues.push({ id: e.id, problem: "payer_not_in_participants" });
       if (e.status === "pending") issues.push({ id: e.id, problem: "pending_incomplete" });
       if (e.amount <= 0) issues.push({ id: e.id, problem: "amount_zero" });
       if (e.confidence < 0.75) issues.push({ id: e.id, problem: `low_confidence_${e.confidence}` });
@@ -155,8 +159,9 @@ export const SUBMIT_TOOL: Anthropic.Tool = {
                     category: { type: ["string", "null"] },
                     note: { type: ["string", "null"] },
                     occurredAt: { type: ["string", "null"], description: "ISO 8601 本地时间，如 2025-10-02T18:30:00" },
+                    treat: { type: ["boolean", "null"], description: "改为请客（true）或取消请客（false）；不改填 null" },
                   },
-                  required: ["amount", "payerId", "participantIds", "category", "note", "occurredAt"],
+                  required: ["amount", "payerId", "participantIds", "category", "note", "occurredAt", "treat"],
                   additionalProperties: false,
                 },
               },

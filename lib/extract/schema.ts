@@ -12,6 +12,8 @@ export const ExtractRequestSchema = z.object({
   supplement: z.string().optional(),
   /** 上一轮抽取结果（追问场景），让模型在其基础上补全而不是重来 */
   previous: z.unknown().optional(),
+  /** 跨行程个人习惯，如"阿强经常只付钱不吃" */
+  habits: z.array(z.string()).optional(),
 });
 export type ExtractRequest = z.infer<typeof ExtractRequestSchema>;
 
@@ -26,6 +28,7 @@ export const ModelOutputSchema = z.object({
   payer_confidence: z.number().min(0).max(1),
   participants: z.array(z.string()).describe("参与分摊的成员名；'大家/所有人/AA'时列出全部成员"),
   participants_confidence: z.number().min(0).max(1),
+  treat: z.boolean().describe("是否'请客'：付款人明确表示自己不参与分摊（'我请客''小华请大家'）。请客时 participants 不包含付款人"),
   category: CategorySchema,
   category_confidence: z.number().min(0).max(1),
   note: z.string().describe("简短备注：商户/事项，如'春熙路 小龙坎火锅'"),
@@ -52,5 +55,6 @@ export const ExtractResponseSchema = z.object({
   missing: z.array(z.string()),
   questions: z.array(z.string()),
   raw: ModelOutputSchema,
+  usage: z.object({ input: z.number(), output: z.number() }).optional(),
 });
 export type ExtractResponse = z.infer<typeof ExtractResponseSchema>;

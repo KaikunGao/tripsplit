@@ -71,5 +71,5 @@ export function SEED(): State {
     base("e_10", 64, m.qiang, all, "交通", "去机场 地铁+打车", "2025-10-04T09:00:00"),
     base("e_pending", 0, m.hua, all, "餐饮", "机场早餐", "2025-10-04T07:30:00", { status: "pending", confidence: 0.4, source: "voice", evidence: { kind: "voice", text: "小华买的机场早餐" } }),
   ];
-  return { trips: [trip], expenses, audit: [] };
+  return { trips: [trip], expenses, audit: [], prefs: { habits: [], lastReconcile: {} } };
 }

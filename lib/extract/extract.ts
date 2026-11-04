@@ -38,7 +38,9 @@ export function decide(trip: Trip, out: ModelOutput): ExtractResponse {
   const participants = out.participants
     .map((n) => resolveMember(trip.members, n))
     .filter((m): m is Member => !!m);
-  const uniq = [...new Set(participants.map((m) => m.id))];
+  let uniq = [...new Set(participants.map((m) => m.id))];
+  // 请客：付款人不分摊。模型若把付款人也列进来，这里去掉。
+  if (out.treat && payer) uniq = uniq.filter((id) => id !== payer.id);
 
   const fields = {
     amount: out.amount != null && out.amount > 0 ? out.amount_confidence : 0,
@@ -73,6 +75,7 @@ export function decide(trip: Trip, out: ModelOutput): ExtractResponse {
       note: out.note,
       occurredAt: out.occurred_at ?? undefined,
       currency: out.currency ?? trip.currency,
+      treat: out.treat || undefined,
       confidence,
     },
     fields,
@@ -86,12 +89,12 @@ export async function extract(req: ExtractRequest): Promise<ExtractResponse> {
   const res = await client().messages.parse({
     model: MODEL,
     max_tokens: 2048,
-    system: [{ type: "text", text: systemPrompt(req.trip), cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: systemPrompt(req.trip, req.habits ?? []), cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userContent(req) }],
     output_config: { effort: EFFORT, format: zodOutputFormat(ModelOutputSchema) },
   });
   if (res.stop_reason === "refusal") throw new Error("模型拒绝处理该输入");
   const out = res.parsed_output;
   if (!out) throw new Error("模型输出不符合结构");
-  return decide(req.trip, out);
+  return { ...decide(req.trip, out), usage: { input: res.usage.input_tokens + (res.usage.cache_read_input_tokens ?? 0) + (res.usage.cache_creation_input_tokens ?? 0), output: res.usage.output_tokens } };
 }

@@ -2,8 +2,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Badge, Field } from "@/components/ui";
+import { AvatarStack } from "@/components/Avatar";
+import { Empty, Field, Icon } from "@/components/ui";
 import { money } from "@/lib/format";
+import { health } from "@/lib/health";
 import { newId } from "@/lib/ids";
 import { actions, useStore } from "@/lib/store";
 
@@ -12,47 +14,95 @@ export default function Home() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">我的旅行</h1>
-          <p className="mt-1 text-sm text-ink-600">创建旅行 → 消费录入 → 账本管理 → 核账 → 结算</p>
-        </div>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">我的旅行</h1>
         <button className="btn btn-primary" onClick={() => setOpen(true)}>
-          + 创建旅行
+          <Icon name="plus" className="h-4 w-4" /> 创建旅行
         </button>
       </div>
 
       {open && <CreateTrip onClose={() => setOpen(false)} />}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {trips.map((t) => {
-          const es = expenses.filter((e) => e.tripId === t.id);
-          const total = es.filter((e) => e.status === "confirmed").reduce((a, e) => a + e.amount, 0);
-          const pending = es.filter((e) => e.status === "pending").length;
-          return (
-            <Link key={t.id} href={`/trip/${t.id}`} className="card block p-5 transition hover:-translate-y-0.5">
-              <div className="flex items-start justify-between">
-                <h2 className="text-lg font-semibold">{t.name}</h2>
-                {pending > 0 && <Badge tone="warn">{pending} 笔待补全</Badge>}
+      {trips.length === 0 && !open ? (
+        <div className="card">
+          <Empty
+            icon={<Icon name="map" className="h-6 w-6" />}
+            title="还没有旅行"
+            hint="创建一次旅行，拉上同行的人，之后每笔消费用一句话、一张截图或一段语音就能记下。"
+            action={
+              <div className="flex gap-2">
+                <button className="btn btn-primary" onClick={() => setOpen(true)}>
+                  创建旅行
+                </button>
+                <button className="btn btn-ghost" onClick={() => actions.resetDemo()}>
+                  看看示例
+                </button>
               </div>
-              <p className="mt-1 text-sm text-ink-400">
-                {t.startDate ?? "—"} ~ {t.endDate ?? "—"} · {t.members.map((m) => m.name).join("、")}
-              </p>
-              <p className="mt-3 text-2xl font-bold">{money(total, t.currency)}</p>
-              <p className="text-xs text-ink-400">{es.length} 笔消费</p>
-            </Link>
-          );
-        })}
-        {trips.length === 0 && <p className="text-sm text-ink-400">还没有旅行，先创建一个。</p>}
-      </div>
+            }
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {trips.map((t) => {
+            const es = expenses.filter((e) => e.tripId === t.id);
+            const h = health(t, es);
+            const todo = h.pending + h.flagged;
+            return (
+              <Link key={t.id} href={`/trip/${t.id}`} className="card block p-5 transition hover:-translate-y-0.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-lg font-semibold">{t.name}</h2>
+                    <p className="mt-0.5 text-xs text-ink-400">
+                      {t.startDate ?? "—"} ~ {t.endDate ?? "—"}
+                    </p>
+                  </div>
+                  <AvatarStack members={t.members} size="sm" max={4} />
+                </div>
 
-      <p className="text-xs text-ink-400">
-        数据保存在本机浏览器；AI 功能只接收账本快照、只返回建议，不会替你改账。{" "}
-        <button className="underline" onClick={() => confirm("重置为示例数据？本机现有数据会被清空。") && actions.resetDemo()}>
-          重置为示例数据
-        </button>
-      </p>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <Stat label="总支出" value={money(h.total, t.currency)} sub={`${h.count} 笔`} />
+                  <Stat
+                    label={h.myNet == null ? "我的净额" : h.myNet > 0 ? "我应收" : h.myNet < 0 ? "我应付" : "我已结清"}
+                    value={h.myNet == null ? "—" : money(Math.abs(h.myNet), t.currency)}
+                    tone={h.myNet == null || h.myNet === 0 ? "" : h.myNet > 0 ? "text-ok-700" : "text-danger-700"}
+                    sub={h.myNet === 0 ? "不用转账" : undefined}
+                  />
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-1.5 text-xs">
+                  {h.pending > 0 && <span className="badge bg-warn-100 text-warn-700">{h.pending} 笔待补全</span>}
+                  {h.flagged > 0 && <span className="badge bg-danger-100 text-danger-700">{h.flagged} 笔待核账</span>}
+                  {h.duplicates > 0 && <span className="badge bg-danger-100 text-danger-700">{h.duplicates} 组疑似重复</span>}
+                  {todo === 0 && h.duplicates === 0 && h.count > 0 && <span className="badge bg-ok-100 text-ok-700">账本干净</span>}
+                  {h.count === 0 && <span className="badge bg-ink-100 text-ink-600">还没有消费</span>}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      <JoinByCode />
+
+      {trips.length > 0 && (
+        <p className="text-xs text-ink-400">
+          数据保存在本机浏览器；AI 功能只接收账本快照、只返回建议，不会替你改账。{" "}
+          <button className="underline" onClick={() => confirm("重置为示例数据？本机现有数据会被清空。") && actions.resetDemo()}>
+            重置为示例数据
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, sub, tone = "" }: { label: string; value: string; sub?: string; tone?: string }) {
+  return (
+    <div className="rounded-xl bg-paper px-3 py-2.5">
+      <div className="text-[11px] text-ink-400">{label}</div>
+      <div className={`text-xl font-bold leading-tight ${tone}`}>{value}</div>
+      {sub && <div className="text-[11px] text-ink-400">{sub}</div>}
     </div>
   );
 }
@@ -80,7 +130,7 @@ function CreateTrip({ onClose }: { onClose: () => void }) {
     <div className="card space-y-3 p-5">
       <h2 className="font-semibold">创建旅行</h2>
       <Field label="旅行名称">
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="如：成都四日游" />
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="如：成都四日游" autoFocus />
       </Field>
       <Field label="成员（逗号分隔，第一位是你自己）" hint="录入时说“我付的”会默认指向第一位成员">
         <input className="input" value={members} onChange={(e) => setMembers(e.target.value)} placeholder="我, 小明, 小华" />
@@ -102,6 +152,21 @@ function CreateTrip({ onClose }: { onClose: () => void }) {
           取消
         </button>
       </div>
+    </div>
+  );
+}
+
+/** 收到邀请链接的人也可以直接贴链接或邀请码加入。 */
+function JoinByCode() {
+  const router = useRouter();
+  const [v, setV] = useState("");
+  const code = v.trim().match(/([a-z2-9]{10})\s*$/)?.[1] ?? "";
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <input className="input max-w-xs" value={v} onChange={(e) => setV(e.target.value)} placeholder="粘贴邀请链接或邀请码加入旅行" onKeyDown={(e) => e.key === "Enter" && code && router.push(`/join/${code}`)} />
+      <button className="btn btn-ghost" disabled={!code} onClick={() => router.push(`/join/${code}`)}>
+        加入
+      </button>
     </div>
   );
 }
