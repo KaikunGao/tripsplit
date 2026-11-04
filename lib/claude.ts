@@ -18,5 +18,7 @@ export function friendlyError(err: unknown): { message: string; status: number }
   if (err instanceof Anthropic.BadRequestError) return { message: "请求内容无法处理：" + err.message, status: 400 };
   if (err instanceof Anthropic.APIConnectionError) return { message: "无法连接模型服务，请检查网络", status: 502 };
   if (err instanceof Anthropic.APIError) return { message: `模型服务错误 (${err.status})`, status: 502 };
+  // SDK 在构造客户端时找不到任何凭证会抛普通 Error（不是 APIError）。
+  if (err instanceof Error && /authentication method/i.test(err.message)) return { message: "服务端未配置 ANTHROPIC_API_KEY", status: 500 };
   return { message: err instanceof Error ? err.message : "未知错误", status: 500 };
 }
