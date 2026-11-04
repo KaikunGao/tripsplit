@@ -4,6 +4,7 @@
 
 - 产品文档：[docs/PRD.md](docs/PRD.md)（用户动线、页面交互、业务规则、异常处理、验收标准）
 - 应用内说明：`/about`
+- 线上地址：https://tripsplit-jet.vercel.app
 
 ## 运行
 
