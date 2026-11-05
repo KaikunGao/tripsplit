@@ -21,8 +21,10 @@ export function aggregate(snap: LedgerSnapshot) {
   }
   const balances = computeBalances(trip, expenses).map((b) => ({ ...b, name: memberName(trip.members, b.memberId) }));
   const transfers = settle(balances).map((t) => ({ from: memberName(trip.members, t.from), to: memberName(trip.members, t.to), amount: t.amount }));
+  /* 已经转完的钱单独列出：净额里已扣掉它们，不说明的话模型会把"净额为 0 但垫付不等"当成异常 */
+  const paid = (trip.settlements ?? []).map((t) => ({ from: memberName(trip.members, t.from), to: memberName(trip.members, t.to), amount: t.amount }));
   const top = [...confirmed].sort((a, b) => homeAmount(b) - homeAmount(a)).slice(0, 3).map((e) => ({ note: e.note, amount: homeAmount(e), category: e.category }));
-  return { total, count: confirmed.length, pending: expenses.length - confirmed.length, byCategory, byDay, byPayer, balances, transfers, top, perHead: trip.members.length ? r2(total / trip.members.length) : 0 };
+  return { total, count: confirmed.length, pending: expenses.length - confirmed.length, byCategory, byDay, byPayer, balances, transfers, paid, settled: paid.length > 0 && transfers.length === 0, top, perHead: trip.members.length ? r2(total / trip.members.length) : 0 };
 }
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -37,7 +39,7 @@ export async function report(snap: LedgerSnapshot) {
   const res = await client().messages.parse({
     model: MODEL,
     max_tokens: 1500,
-    system: "你根据给定的聚合数据写一份旅行消费报告。所有数字必须来自给定数据，不得自行计算或改动；不要提及结算转账以外的建议。",
+    system: "你根据给定的聚合数据写一份旅行消费报告。所有数字必须来自给定数据，不得自行计算或改动；不要提及结算转账以外的建议。transfers 是还没转的钱，paid 是已经转完的，balances 的 net 已扣除 paid；settled=true 表示这趟已全部结清。",
     messages: [{ role: "user", content: `旅行：${snap.trip.name}\n聚合数据：${JSON.stringify(agg)}` }],
     output_config: { effort: "low", format: zodOutputFormat(NarrativeSchema) },
   });

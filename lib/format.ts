@@ -16,3 +16,6 @@ export const todayLocal = () => localIso().slice(0, 10);
 
 /** 审计时间展示：本地 MM-DD HH:mm */
 export const localStamp = (iso: string) => localIso(new Date(iso)).slice(5, 16).replace("T", " ");
+
+/** 账目字段的中文名：修改预览和修改记录共用。 */
+export const FIELD_LABEL: Record<string, string> = { amount: "金额", payerId: "付款人", participantIds: "参与人", category: "分类", note: "备注", occurredAt: "时间", treat: "请客", currency: "币种", rate: "汇率", split: "分摊", status: "状态" };

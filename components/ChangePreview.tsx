@@ -1,9 +1,7 @@
 "use client";
-import { money } from "@/lib/format";
+import { FIELD_LABEL as LABEL, money } from "@/lib/format";
 import { memberName } from "@/lib/settle";
 import type { Expense, ProposedChange, Trip } from "@/lib/types";
-
-const LABEL: Record<string, string> = { amount: "金额", payerId: "付款人", participantIds: "参与人", category: "分类", note: "备注", occurredAt: "时间", treat: "请客", currency: "币种", rate: "汇率", split: "分摊" };
 
 /** 修改预览：逐字段 before → after，用户看清楚再确认。 */
 export function ChangePreview({ trip, expense, change, onApply, onIgnore, applied }: { trip: Trip; expense: Expense | undefined; change: ProposedChange; onApply: () => void; onIgnore: () => void; applied?: "applied" | "ignored" }) {

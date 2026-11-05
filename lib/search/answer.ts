@@ -63,6 +63,8 @@ export async function search(snap: LedgerSnapshot, query: string): Promise<Searc
       "- citations 只能填候选中的 id（不带 #）。",
       "- 用户要求修改/删除时才给 proposed_changes；patch 只包含要改的字段，payerId/participantIds 用成员 id。永远不要自行决定改账，只给建议，由用户确认。",
       "- summarize 意图下给出合计与按人/按类的简要统计。",
+      `- 本币是 ${trip.currency}（¥）。外币账目后面的「折合」是按当日汇率换算的本币金额；合计、比较、排名一律用本币，引用单笔时可以带上原币金额。`,
+      "- 标了「请客」或「不均摊」的账目已经按规则计入结算，不用再建议调整。",
       ctx,
       `成员 id 对照：${trip.members.map((m) => `${m.name}=${m.id}`).join("，")}`,
     ].join("\n"),

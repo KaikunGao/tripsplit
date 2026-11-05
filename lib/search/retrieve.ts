@@ -1,5 +1,5 @@
 import type { Expense, Trip } from "../types";
-import { memberName } from "../settle";
+import { homeAmount, memberName, splitOf } from "../settle";
 
 /** 解析后的结构化检索条件（由模型从模糊描述中抽出）。 */
 export type Filters = {
@@ -18,14 +18,19 @@ export type Hit = { expense: Expense; score: number; matched: string[] };
 /** 把一笔消费渲染成检索文档，也是喂给模型的证据文本。 */
 export function renderExpense(trip: Trip, e: Expense): string {
   const names = trip.members;
+  /* 外币同时给出折合本币的金额；不均摊时把每人应摊写出来，模型统计时不用自己猜 */
+  const foreign = e.currency !== trip.currency;
+  const uneven = e.split && e.split.mode !== "equal";
   return [
     `#${e.id}`,
     `${e.occurredAt.slice(0, 16).replace("T", " ")}`,
     e.category,
     e.note,
-    `¥${e.amount}`,
+    foreign ? `${e.currency} ${e.amount}（折合 ¥${homeAmount(e)}）` : `¥${e.amount}`,
     `付款:${memberName(names, e.payerId)}`,
     `参与:${e.participantIds.map((id) => memberName(names, id)).join("、") || "（空）"}`,
+    e.treat ? "请客（付款人不分摊）" : "",
+    uneven ? `不均摊，每人应摊:${Object.entries(splitOf(e)).map(([id, v]) => `${memberName(names, id)} ¥${v}`).join(" ")}` : "",
     e.status === "pending" ? "待补全" : "",
     e.evidence?.text ? `证据:${e.evidence.text}` : "",
   ]

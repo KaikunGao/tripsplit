@@ -3,24 +3,26 @@ import { useState } from "react";
 import { ChangePreview } from "@/components/ChangePreview";
 import { ExpenseCard } from "@/components/ExpenseCard";
 import { Badge, Empty, Icon, Section, Skeleton, Spinner } from "@/components/ui";
+import { DEMO_QUESTIONS, demoResults, type DemoReport } from "@/lib/demo";
 import { printReport } from "@/lib/export";
 import { money } from "@/lib/format";
-import type { aggregate } from "@/lib/report";
 import type { SearchResult } from "@/lib/search/answer";
 import { actions } from "@/lib/store";
 import type { Expense, ProposedChange, Trip } from "@/lib/types";
 
 const EXAMPLES = ["第一天晚上那顿火锅是谁付的？", "小林付的超过 300 的账", "10月2号的门票花了多少", "把钟水饺那笔的参与人改成大家", "这趟餐饮一共花了多少，谁付得最多"];
 
-type Report = { aggregate: ReturnType<typeof aggregate>; narrative: { title: string; highlights: string[]; narrative: string } | null };
+type Report = DemoReport;
 
 export function SearchPanel({ trip, expenses }: { trip: Trip; expenses: Expense[] }) {
-  const [q, setQ] = useState("");
+  /* 示例旅行：账本没动过时预填一问一答（和报告），都是预先对示例账真实跑出来的 */
+  const [demo] = useState(() => demoResults(trip, expenses));
+  const [q, setQ] = useState(demo?.search?.query ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [res, setRes] = useState<SearchResult | null>(null);
+  const [res, setRes] = useState<SearchResult | null>(demo?.search?.result ?? null);
   const [applied, setApplied] = useState<Record<number, "applied" | "ignored">>({});
-  const [report, setReport] = useState<Report | null>(null);
+  const [report, setReport] = useState<Report | null>(demo?.report ?? null);
   const [reportBusy, setReportBusy] = useState(false);
 
   async function search(query = q) {
@@ -74,7 +76,7 @@ export function SearchPanel({ trip, expenses }: { trip: Trip; expenses: Expense[
           </button>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {EXAMPLES.map((x) => (
+          {(DEMO_QUESTIONS[trip.id] ?? EXAMPLES).map((x) => (
             <button key={x} className="rounded-full bg-ink-100 px-2.5 py-1 text-xs text-ink-600 hover:bg-ink-200" onClick={() => (setQ(x), search(x))}>
               {x}
             </button>

@@ -6,8 +6,10 @@ import { SEED } from "../lib/seed";
 import { computeBalances, settle, settlePlan, splitOf, validateSplit } from "../lib/settle";
 import type { Expense, Trip } from "../lib/types";
 
-const { trips, expenses } = SEED();
-const trip: Trip = trips[0];
+/* 示例数据有两趟旅行；单测都按第一趟（成都四日游）的成员和账目写 */
+const seed = SEED();
+const trip: Trip = seed.trips[0];
+const expenses = seed.expenses.filter((e) => e.tripId === trip.id);
 const [ming, hua, qiang, lin] = trip.members.map((m) => m.id);
 
 // --- splitOf: 均摊分到分且合计等于金额；权重分摊

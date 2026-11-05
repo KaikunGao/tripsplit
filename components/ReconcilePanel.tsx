@@ -4,6 +4,7 @@ import { ChangePreview } from "@/components/ChangePreview";
 import { ExpenseCard } from "@/components/ExpenseCard";
 import { Badge, Empty, Icon, Section, Skeleton, SkeletonCard, Spinner } from "@/components/ui";
 import type { ReconcileResult } from "@/lib/agent/run";
+import { demoResults } from "@/lib/demo";
 import { actions, fingerprint, useStore } from "@/lib/store";
 import type { Expense, ProposedChange, Trip } from "@/lib/types";
 
@@ -17,7 +18,9 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
   const { prefs } = useStore();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [res, setRes] = useState<ReconcileResult | null>(null);
+  /* 示例旅行：账本没动过时直接展示预先跑好的一次真实核账结果，不用先等 30 秒 */
+  const [res, setRes] = useState<ReconcileResult | null>(() => demoResults(trip, expenses)?.reconcile ?? null);
+  const [preset, setPreset] = useState(() => res != null);
   const [applied, setApplied] = useState<Record<string, "applied" | "ignored">>({});
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [showTrace, setShowTrace] = useState(false);
@@ -26,6 +29,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
     setBusy(true);
     setErr("");
     setRes(null);
+    setPreset(false);
     setApplied({});
     setOpen({});
     try {
@@ -90,6 +94,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
         <p className="text-sm text-ink-600">
           Agent 只持有对账本的<b>只读</b>工具（列账、查重、规则体检、分类统计、结算预览），逐项核查后提交带证据的结论。所有修改建议都要你逐条确认才会生效。
         </p>
+        {preset && res && <p className="mt-2 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">下面是 Agent 对这本示例账跑出的一次真实结果，可以直接逐条确认或忽略，账本、预算和结算会跟着变。点「重新核账」会现场再跑一遍，约 30 秒。</p>}
         {err && <p className="mt-2 text-sm text-danger-700">{err}</p>}
       </Section>
 

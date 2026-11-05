@@ -16,10 +16,15 @@ cp .env.example .env.local   # 至少填 ANTHROPIC_API_KEY；其余可选项见�
 npm run dev                  # http://localhost:3000
 ```
 
-首次打开会载入示例旅行（成都四日游，内含故意埋的重复录入 / 参与人错误 / 金额异常，用于演示核账）。
+首次打开会载入两趟示例旅行，首页有导览卡直达：
+- 成都四日游：刚玩完还没核账，内含故意埋的重复录入 / 参与人错误 / 金额异常，预算因此显示超支；核账页直接带一份 Agent 的真实核账结果，逐条确认后预算和结算跟着变。
+- 大阪京都五日：已核账、已全部结清并锁账，日元按当日汇率折算，含请客 / 按份 / 按比例 / 指定金额四种分摊、已转记录和消费报告。
+
+示例旅行的核账 / 查询 / 报告结果是 `npm run demo:snapshot` 对示例数据真实调模型跑出来后存下的快照（`lib/demo-results.json`）；改了 `lib/seed.ts` 要重跑。账本被改动后快照不再展示，以现场结果为准。
 
 ```bash
 npm test        # 纯函数单测：分摊规则/结算/还款、录入决策、检索
+npm run demo:snapshot   # 重新生成示例旅行的 AI 结果快照（真实调模型）
 npm run eval    # 录入解析评测集（eval/cases.json，20 例，真实调模型），结果写 eval/results/ 与数据库
 npm run build
 ```

@@ -1,8 +1,10 @@
 "use client";
 import { useSyncExternalStore } from "react";
+import { FIELD_LABEL, money } from "./format";
 import { newId } from "./ids";
-import { SEED } from "./seed";
-import type { AuditEntry, Expense, ExpensePatch, Prefs, Settlement, Trip } from "./types";
+import { DEMO_TRIP_ID, SEED } from "./seed";
+import { memberName } from "./settle";
+import type { AuditEntry, Expense, ExpensePatch, Member, Prefs, Settlement, Split, Trip } from "./types";
 
 /**
  * 全部数据存在浏览器 localStorage。服务端 AI 接口只接收账本快照并返回建议，
@@ -37,12 +39,19 @@ function load(): State {
   if (typeof window === "undefined") return EMPTY;
   try {
     const raw = localStorage.getItem(KEY);
-    state = raw ? normalize(JSON.parse(raw) as Partial<State>) : normalize(SEED());
-    if (!raw) persist();
+    const saved = raw ? normalize(JSON.parse(raw) as Partial<State>) : null;
+    state = saved && !untouchedOldDemo(saved) ? saved : normalize(SEED());
+    if (state !== saved) persist();
   } catch {
     state = normalize(SEED());
   }
   return state;
+}
+
+/** 本机只有旧版示例旅行、且一笔没动过：换成新版示例，老访客也能看到完整演示。 */
+function untouchedOldDemo(s: State): boolean {
+  const t = s.trips[0];
+  return s.trips.length === 1 && t.id === DEMO_TRIP_ID && !t.budget && !t.shareCode && !t.settlements?.length && !t.rules?.length && s.prefs.habits.length === 0 && s.audit.length === 0 && s.expenses.length === 15;
 }
 
 function persist() {
@@ -151,7 +160,7 @@ export const actions = {
       {
         ...s,
         expenses: s.expenses.map((e) => (e.id === id ? after : e)),
-        audit: [log({ tripId: before.tripId, action: "update", expenseId: id, origin, summary: describePatch(before, patch), before, after }), ...s.audit],
+        audit: [log({ tripId: before.tripId, action: "update", expenseId: id, origin, summary: describePatch(before, patch, s.trips.find((t) => t.id === before.tripId)?.members), before, after }), ...s.audit],
       },
       [before.tripId],
     );
@@ -182,7 +191,7 @@ export const actions = {
       {
         ...s,
         trips: s.trips.map((x) => (x.id === tripId ? { ...x, settlements } : x)),
-        audit: [log({ tripId, action: "settle", origin: "user", summary: `标记已转：${t.from} → ${t.to} ¥${t.amount}` }), ...s.audit],
+        audit: [log({ tripId, action: "settle", origin: "user", summary: `标记已转：${memberName(trip.members, t.from)} → ${memberName(trip.members, t.to)} ${money(t.amount, trip.currency)}` }), ...s.audit],
       },
       [tripId],
     );
@@ -276,18 +285,27 @@ export function fingerprint(expenses: Expense[]): string {
     .join("|");
 }
 
-export function describePatch(before: Expense, patch: Record<string, unknown>): string {
+/** 修改记录的一句话摘要：字段用中文名，成员 id 换成名字；置信度等内部字段不写。 */
+export function describePatch(before: Expense, patch: Record<string, unknown>, members: Member[] = []): string {
+  const fmt = (k: string, v: unknown): string => {
+    if (v == null) return "空";
+    if (k === "amount") return money(v as number, (patch.currency as string) ?? before.currency);
+    if (k === "payerId") return memberName(members, v as string);
+    if (k === "participantIds") return (v as string[]).map((id) => memberName(members, id)).join("、") || "（空）";
+    if (k === "treat") return v ? "是" : "否";
+    if (k === "status") return v === "pending" ? "待补全" : "已入账";
+    if (k === "split") return { equal: "均摊", shares: "按份", percent: "按比例", exact: "指定金额" }[(v as Split).mode];
+    if (k === "occurredAt") return String(v).slice(5).replace("T", " ");
+    return typeof v === "object" ? JSON.stringify(v) : String(v);
+  };
+  /* 没设过的请客 / 分摊 / 汇率，和显式的"否 / 均摊 / 1"是一回事；时间只比到分钟 */
+  const norm = (k: string, v: unknown): unknown => (k === "occurredAt" && v ? String(v).slice(0, 16) : (v ?? (k === "treat" ? false : k === "split" ? { mode: "equal" } : k === "rate" ? 1 : v)));
   const parts: string[] = [];
-  for (const [k, v] of Object.entries(patch)) {
-    const old = (before as Record<string, unknown>)[k];
-    if (JSON.stringify(old) !== JSON.stringify(v)) parts.push(`${k}: ${fmt(old)} → ${fmt(v)}`);
+  for (const [k, raw] of Object.entries(patch)) {
+    if (!FIELD_LABEL[k]) continue;
+    const old = norm(k, (before as Record<string, unknown>)[k]);
+    const v = norm(k, raw);
+    if (JSON.stringify(old) !== JSON.stringify(v)) parts.push(`${FIELD_LABEL[k]} ${fmt(k, old)} → ${fmt(k, v)}`);
   }
-  return parts.length ? `修改 ${before.note || before.category}：${parts.join("；")}` : "无变化";
-}
-
-function fmt(v: unknown): string {
-  if (Array.isArray(v)) return `[${v.join(",")}]`;
-  if (v == null) return "空";
-  if (typeof v === "object") return JSON.stringify(v);
-  return String(v);
+  return parts.length ? `修改 ${before.note || before.category}：${parts.join("；")}` : `修改 ${before.note || before.category}`;
 }

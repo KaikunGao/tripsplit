@@ -3,11 +3,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AvatarStack } from "@/components/Avatar";
-import { Empty, Field, Icon } from "@/components/ui";
+import { Empty, Field, Icon, type IconName } from "@/components/ui";
+import { isDemoTrip } from "@/lib/demo";
 import { money } from "@/lib/format";
 import { health } from "@/lib/health";
 import { newId } from "@/lib/ids";
+import { DEMO_DONE_TRIP_ID, DEMO_TRIP_ID } from "@/lib/seed";
 import { actions, useStore } from "@/lib/store";
+import type { Trip } from "@/lib/types";
 
 export default function Home() {
   const { trips, expenses } = useStore();
@@ -23,6 +26,8 @@ export default function Home() {
       </div>
 
       {open && <CreateTrip onClose={() => setOpen(false)} />}
+
+      {!open && <DemoGuide trips={trips} />}
 
       {trips.length === 0 && !open ? (
         <div className="card">
@@ -49,7 +54,7 @@ export default function Home() {
             const h = health(t, es);
             const todo = h.pending + h.flagged;
             return (
-              <Link key={t.id} href={`/trip/${t.id}`} className="card block p-5 transition hover:-translate-y-0.5">
+              <Link key={t.id} href={`/trip/${t.id}${t.locked ? "?tab=settle" : isDemoTrip(t.id) ? "?tab=ledger" : ""}`} className="card block p-5 transition hover:-translate-y-0.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="truncate text-lg font-semibold">{t.name}</h2>
@@ -75,6 +80,8 @@ export default function Home() {
                   {h.flagged > 0 && <span className="badge bg-danger-100 text-danger-700">{h.flagged} 笔待核账</span>}
                   {h.duplicates > 0 && <span className="badge bg-danger-100 text-danger-700">{h.duplicates} 组疑似重复</span>}
                   {todo === 0 && h.duplicates === 0 && h.count > 0 && <span className="badge bg-ok-100 text-ok-700">账本干净</span>}
+                  {t.locked && <span className="badge bg-ok-100 text-ok-700">已结清 · 已锁账</span>}
+                  {t.shareCode && <span className="badge bg-brand-100 text-brand-700">云同步中</span>}
                   {h.count === 0 && <span className="badge bg-ink-100 text-ink-600">还没有消费</span>}
                 </div>
               </Link>
@@ -94,6 +101,45 @@ export default function Home() {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * 示例导览：本机还留着示例旅行时，在首页给三个直达入口，
+ * 第一次来的人不用自己摸索就能看到核账、查询、结算各自用起来的样子。
+ */
+function DemoGuide({ trips }: { trips: Trip[] }) {
+  const has = (id: string) => trips.some((t) => t.id === id);
+  const steps: { href: string; icon: IconName; title: string; text: string }[] = [
+    ...(has(DEMO_TRIP_ID)
+      ? [
+          { href: `/trip/${DEMO_TRIP_ID}?tab=reconcile`, icon: "shield" as const, title: "看 Agent 核账", text: "成都这趟刚玩完还没对账。Agent 查出了记了两次的火锅、多打一个 0 的包车，逐条确认后预算和结算跟着变。" },
+          { href: `/trip/${DEMO_TRIP_ID}?tab=search`, icon: "search" as const, title: "用一句话问账本", text: "「第一天晚上那顿火锅是谁付的？」回答会带上对应的账目，也可以直接说「把那笔改成大家平摊」。" },
+        ]
+      : []),
+    ...(has(DEMO_DONE_TRIP_ID) ? [{ href: `/trip/${DEMO_DONE_TRIP_ID}?tab=settle`, icon: "scale" as const, title: "看一趟结清的账", text: "大阪京都这趟已经全部转完并锁账：日元按当日汇率折算，请客、按份、按比例各有一笔，还有消费报告。" }] : []),
+  ];
+  if (steps.length === 0) return null;
+  return (
+    <section className="card p-4 sm:p-5">
+      <h2 className="font-semibold">先看看用起来是什么样</h2>
+      <p className="mt-1 text-sm text-ink-600">下面两趟旅行是示例数据，只存在你的浏览器里，可以随便点、随便改，改乱了页面底部能一键重置。</p>
+      <div className="mt-3 grid gap-2 md:grid-cols-3">
+        {steps.map((s, i) => (
+          <Link key={s.href} href={s.href} className="group flex gap-3 rounded-xl bg-paper p-3 transition hover:bg-brand-50">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-700">
+              <Icon name={s.icon} className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold group-hover:text-brand-700">
+                {i + 1}. {s.title}
+              </span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-ink-600">{s.text}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
