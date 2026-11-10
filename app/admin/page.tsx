@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { Skeleton } from "@/components/ui";
-import { db, ready } from "@/lib/db";
+import { ready } from "@/lib/db";
 import { listRuns, type Run } from "@/lib/telemetry";
 
 export const metadata = { title: "运营后台 · TripSplit" };
@@ -35,9 +35,9 @@ async function AdminInner({ searchParams }: { searchParams: Promise<{ token?: st
       </div>
     );
 
-  await ready();
+  const d = await ready();
   const { runs, persistent } = await listRuns(300);
-  const evals = db() ? (await db()!.execute("SELECT * FROM evals ORDER BY id DESC LIMIT 20")).rows : [];
+  const evals = d ? (await d.execute("SELECT * FROM evals ORDER BY id DESC LIMIT 20")).rows : [];
 
   const byRoute = new Map<string, { n: number; ok: number; ms: number[]; input: number; output: number; cost: number }>();
   for (const r of runs) {

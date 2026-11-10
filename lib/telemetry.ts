@@ -36,7 +36,7 @@ export async function record(r: Omit<Run, "at" | "model" | "cost_usd"> & { model
   const run: Run = { at: new Date().toISOString(), model: r.model ?? MODEL, cost_usd: estimateCost(r.model ?? MODEL, r.input, r.output), ...r };
   mem.unshift(run);
   if (mem.length > 500) mem.length = 500;
-  const d = db();
+  const d = await db();
   if (!d) return;
   try {
     await d.execute({
@@ -49,7 +49,7 @@ export async function record(r: Omit<Run, "at" | "model" | "cost_usd"> & { model
 }
 
 export async function listRuns(limit = 200): Promise<{ runs: Run[]; persistent: boolean }> {
-  const d = db();
+  const d = await db();
   if (!d) return { runs: mem.slice(0, limit), persistent: false };
   const rs = await d.execute({ sql: "SELECT * FROM runs ORDER BY id DESC LIMIT ?", args: [limit] });
   return {

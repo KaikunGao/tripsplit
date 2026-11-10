@@ -45,3 +45,8 @@ data/
 
 # 评测结果
 eval/results/
+
+# cloudflare (OpenNext build output, local worker state, local secrets)
+/.open-next/
+/.wrangler/
+.dev.vars*

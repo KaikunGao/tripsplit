@@ -1,39 +1,48 @@
-import { createClient, type Client } from "@libsql/client";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import type { Client } from "@libsql/client";
 
 /**
  * 数据库（libsql）：云同步、遥测、评测结果都放这里。
- *  - 本地开发：TRIPSPLIT_DB_URL=file:./data/tripsplit.db（默认，自动建表）
- *  - 线上：TRIPSPLIT_DB_URL=libsql://xxx.turso.io + TRIPSPLIT_DB_TOKEN
- *  - 设为 "off" 或 Vercel 上未配置时返回 null，功能自动退回本机模式。
+ *  - 本地开发：TRIPSPLIT_DB_URL=file:./data/tripsplit.db（默认，自动建表，走 Node 客户端）
+ *  - 线上：TRIPSPLIT_DB_URL=libsql://xxx.turso.io + TRIPSPLIT_DB_TOKEN（走 web 客户端，Vercel / Cloudflare 通用）
+ *  - 设为 "off"，或 Vercel / Cloudflare 上未配置时返回 null，功能自动退回本机模式。
+ *
+ * 2026-11-10 为部署到 Cloudflare Workers 改成异步：Workers 上不能静态引入 Node 版客户端，
+ * 也不能跨请求复用 WebSocket，所以远端一律用 HTTP（https://）。
  */
-let _db: Client | null | undefined;
-let _ready: Promise<void> | null = null;
+const onWorkers = typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
 
-export function db(): Client | null {
-  if (_db !== undefined) return _db;
-  const url = process.env.TRIPSPLIT_DB_URL ?? (process.env.VERCEL ? "off" : "file:./data/tripsplit.db");
-  if (url === "off") return (_db = null);
+let _db: Promise<Client | null> | undefined;
+
+async function connect(): Promise<Client | null> {
+  const url = process.env.TRIPSPLIT_DB_URL ?? (process.env.VERCEL || onWorkers ? "off" : "file:./data/tripsplit.db");
+  if (url === "off") return null;
   try {
-    // 本地文件库：先把目录建出来，libsql 不会自动创建
-    if (url.startsWith("file:")) mkdirSync(dirname(url.slice(5)), { recursive: true });
-    _db = createClient({ url, authToken: process.env.TRIPSPLIT_DB_TOKEN });
-    _ready = migrate(_db);
-    return _db;
+    let c: Client;
+    if (url.startsWith("file:")) {
+      // 本地文件库：先把目录建出来，libsql 不会自动创建
+      const [{ mkdirSync }, { dirname }, { createClient }] = await Promise.all([import("node:fs"), import("node:path"), import("@libsql/client")]);
+      mkdirSync(dirname(url.slice(5)), { recursive: true });
+      c = createClient({ url });
+    } else {
+      const { createClient } = await import("@libsql/client/web");
+      c = createClient({ url: onWorkers ? url.replace(/^libsql:/, "https:") : url, authToken: process.env.TRIPSPLIT_DB_TOKEN });
+    }
+    await migrate(c);
+    return c;
   } catch (e) {
     console.warn("db init failed", e);
-    return (_db = null);
+    return null;
   }
 }
 
-/** 等建表完成（路由里 await 一下即可）。 */
-export async function ready(): Promise<Client | null> {
-  const d = db();
-  if (_ready) await _ready;
-  return d;
+/** 拿到已建好表的客户端；不可用时为 null。同一进程只连一次。 */
+export function ready(): Promise<Client | null> {
+  if (_db === undefined) _db = connect();
+  return _db;
 }
 
+/** 与 ready() 相同，保留旧名字。 */
+export const db = ready;
 async function migrate(c: Client) {
   await c.batch(
     [

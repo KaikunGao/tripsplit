@@ -1,0 +1,27 @@
+{
+  // Cloudflare Workers config for the OpenNext build (npm run cf:build / cf:deploy).
+  // The public URL is the Pages proxy (cf-pages/), because *.workers.dev is DNS-poisoned in mainland China.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tripsplit",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tripsplit"
+    }
+  ],
+  "observability": { "enabled": true },
+  // Secrets (set with `npx wrangler secret put <NAME>`, never in this file):
+  //   ANTHROPIC_API_KEY, STT_API_KEY, TRIPSPLIT_DB_URL, TRIPSPLIT_DB_TOKEN, ADMIN_TOKEN
+  // Plain vars that are safe to commit (same values as on Vercel, minus the keys):
+  "vars": {
+    "STT_BASE_URL": "https://api.groq.com/openai/v1",
+    "STT_MODEL": "whisper-large-v3-turbo"
+  }
+}

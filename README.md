@@ -38,6 +38,37 @@ npm run build
 | 汇率 | 无（frankfurter.dev 免费接口，欧洲央行参考汇率） | 取不到时手填 |
 | `/admin` 访问控制 | `ADMIN_TOKEN` | 任何人可看（线上务必设置） |
 
+## 部署到 Cloudflare(国内不翻墙能打开)
+
+线上一直在 Vercel(tripsplit-jet.vercel.app),但 `*.vercel.app` 在大陆被 DNS 污染,国内面试官点不开。2026-11-10 另加了一套 Cloudflare 部署:
+OpenNext 把 Next.js 构建成一个 Worker(`wrangler.jsonc`),再用一个只含 `_worker.js` 的 Cloudflare Pages 项目(`cf-pages/`)把 `tripsplit-app.pages.dev` 的请求经 Service Binding 转给它。
+多这一层是因为 `*.workers.dev` 同样被污染,而 `*.pages.dev` 国内 29 个节点 21 个能开。
+
+为此 `lib/db.ts` 改成异步:本地 `file:` 库仍走 Node 客户端,远端 Turso 走 `@libsql/client/web`;在 Workers 上把 `libsql://` 换成 `https://`,因为 Workers 不允许跨请求复用 WebSocket。调用方统一 `await ready()`。
+
+一次性准备(本机):
+
+```bash
+npx wrangler login
+```
+
+```bash
+for k in ANTHROPIC_API_KEY STT_API_KEY TRIPSPLIT_DB_URL TRIPSPLIT_DB_TOKEN ADMIN_TOKEN; do npx wrangler secret put $k; done
+```
+
+```bash
+npx wrangler pages project create tripsplit-app --production-branch main --force
+```
+
+之后每次发布:
+
+```bash
+npm run cf:deploy
+```
+
+本地在 Workers 运行时里预览:`npm run cf:preview`,环境变量放 `.dev.vars`(已忽略;不填数据库时写 `TRIPSPLIT_DB_URL=off`)。`STT_BASE_URL`、`STT_MODEL` 这类非密钥配置在 `wrangler.jsonc` 的 `vars` 里。Vercel 部署照旧,两边同时在线。
+`cf:*` 脚本通过 `scripts/cf-build.mjs` 构建:它在构建期间把 `.env.local` 挪开(OpenNext 会把所有 `.env*` 的值直接写进 Worker 包里,不挪开就等于把本地密钥上传了),构建完再放回;同时设 `CF_BUILD=1`:这个构建关掉 `cacheComponents` 和 `partialPrefetching`(Next 的 Cache Components 在 workerd 里会让页面挂死),Vercel 构建仍然开着。
+
 ## 架构
 
 ```

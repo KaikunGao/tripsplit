@@ -9,7 +9,12 @@
     "lint": "eslint",
     "test": "tsx scripts/test.ts",
     "eval": "tsx scripts/eval.ts",
-    "demo:snapshot": "tsx scripts/demo-snapshot.ts"
+    "demo:snapshot": "tsx scripts/demo-snapshot.ts",
+    "cf:build": "node scripts/cf-build.mjs",
+    "cf:preview": "node scripts/cf-build.mjs && opennextjs-cloudflare preview",
+    "cf:deploy": "node scripts/cf-build.mjs && opennextjs-cloudflare deploy && npm run cf:pages",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf:pages": "cd cf-pages && wrangler pages deploy --branch main --commit-dirty=true"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
@@ -20,6 +25,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.16",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -28,6 +34,7 @@
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.159.0"
   }
 }
