@@ -1,0 +1,25 @@
+{
+  "_comment": "录入解析评测集：输入是文字/语音转写，expected 是人工标注。participants 用成员名；null 表示不关心该字段。trip 固定用示例旅行（小明=我、小华、阿强、小林，2025-10-01~04）。",
+  "cases": [
+    { "id": "t01", "kind": "text", "text": "阿强付的火锅 412，大家 AA", "expected": { "decision": "auto", "amount": 412, "payer": "阿强", "participants": ["小明", "小华", "阿强", "小林"], "category": "餐饮", "treat": false } },
+    { "id": "t02", "kind": "text", "text": "今天中午小华请大家吃了串串，一共 268", "expected": { "decision": "auto", "amount": 268, "payer": "小华", "participants": ["小明", "阿强", "小林"], "category": "餐饮", "treat": true } },
+    { "id": "t03", "kind": "text", "text": "打车 58", "expected": { "decision": "ask", "amount": 58, "payer": null, "participants": null, "category": "交通", "treat": false } },
+    { "id": "t04", "kind": "text", "text": "我付的青城山门票 4 张 320", "expected": { "decision": "ask", "amount": 320, "payer": "小明", "participants": null, "category": "门票", "treat": false } },
+    { "id": "t05", "kind": "text", "text": "我和小林打车去宽窄巷子 23 块，我付的", "expected": { "decision": "auto", "amount": 23, "payer": "小明", "participants": ["小明", "小林"], "category": "交通", "treat": false } },
+    { "id": "t06", "kind": "voice", "text": "小林付了酒店两晚一共一千二百八，四个人平摊", "expected": { "decision": "auto", "amount": 1280, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "住宿", "treat": false } },
+    { "id": "t07", "kind": "text", "text": "今天天气真好，熊猫基地人好多", "expected": { "decision": "reject", "amount": null, "payer": null, "participants": null, "category": null, "treat": false } },
+    { "id": "t08", "kind": "text", "text": "阿强买了伴手礼 600，他自己的", "expected": { "decision": "auto", "amount": 600, "payer": "阿强", "participants": ["阿强"], "category": "购物", "treat": false } },
+    { "id": "t09", "kind": "voice", "text": "我请小华喝奶茶三十二", "expected": { "decision": "auto", "amount": 32, "payer": "小明", "participants": ["小华"], "category": "餐饮", "treat": true } },
+    { "id": "t10", "kind": "text", "text": "小华付的 KTV 388，我们四个", "expected": { "decision": "auto", "amount": 388, "payer": "小华", "participants": ["小明", "小华", "阿强", "小林"], "category": "娱乐", "treat": false } },
+    { "id": "t11", "kind": "text", "text": "地铁 4 块，我和阿强", "expected": { "decision": "ask", "amount": 4, "payer": null, "participants": ["小明", "阿强"], "category": "交通", "treat": false } },
+    { "id": "t12", "kind": "text", "text": "小林垫的机场大巴，一人 20，四个人", "expected": { "decision": "auto", "amount": 80, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "交通", "treat": false } },
+    { "id": "t13", "kind": "text", "text": "晚饭日料 318 小林付，四人", "expected": { "decision": "auto", "amount": 318, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "餐饮", "treat": false } },
+    { "id": "t14", "kind": "text", "text": "我用支付宝付了锦里的三大炮 52，小华和我吃的", "expected": { "decision": "auto", "amount": 52, "payer": "小明", "participants": ["小明", "小华"], "category": "餐饮", "treat": false } },
+    { "id": "t15", "kind": "voice", "text": "小华买的机场早餐", "expected": { "decision": "ask", "amount": null, "payer": "小华", "participants": null, "category": "餐饮", "treat": false } },
+    { "id": "t16", "kind": "text", "text": "包车一天 350 小林付的 大家", "expected": { "decision": "auto", "amount": 350, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "交通", "treat": false } },
+    { "id": "t17", "kind": "text", "text": "老王请我们吃饭 500", "expected": { "decision": "ask", "amount": 500, "payer": null, "participants": null, "category": "餐饮", "treat": true } },
+    { "id": "t18", "kind": "text", "text": "民宿押金 200 阿强先垫，到时候退", "expected": { "decision": "ask", "amount": 200, "payer": "阿强", "participants": null, "category": "住宿", "treat": false } },
+    { "id": "t19", "kind": "text", "text": "小华付的 3000 日元拉面，我们四个吃的", "expected": { "decision": "auto", "amount": 3000, "currency": "JPY", "payer": "小华", "participants": ["小明", "小华", "阿强", "小林"], "category": "餐饮", "treat": false } },
+    { "id": "t20", "kind": "text", "text": "门票 我付 4 个人 一共 240", "expected": { "decision": "auto", "amount": 240, "payer": "小明", "participants": ["小明", "小华", "阿强", "小林"], "category": "门票", "treat": false } }
+  ]
+}

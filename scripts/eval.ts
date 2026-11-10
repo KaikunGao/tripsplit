@@ -1,7 +1,8 @@
 /**
  * 录入解析评测：对 eval/cases.json 逐条调 extract()，按字段算准确率与成本。
- * 运行：npm run eval  （读取 .env.local 里的 ANTHROPIC_API_KEY；TRIPSPLIT_MODEL / TRIPSPLIT_EFFORT 可覆盖）
- * 结果写到 eval/results/<时间>.json；配置了数据库时同时写入 evals 表，/admin 能看历史。
+ * 运行：npm run eval [caseId] [--cases eval/cases.json] [--label 说明]
+ *   读取 .env.local 里的 ANTHROPIC_API_KEY；TRIPSPLIT_MODEL / TRIPSPLIT_EFFORT 可覆盖模型与 effort。
+ * 结果写到 eval/results/<时间>[-label].json，含按 tags（评测维度）汇总的通过率；配置了数据库时同时写入 evals 表，/admin 能看历史。
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { extract } from "../lib/extract/extract";
@@ -16,13 +17,17 @@ if (existsSync(".env.local")) {
   }
 }
 
-type Case = { id: string; kind: "text" | "voice"; text: string; expected: { decision: "auto" | "ask" | "reject"; amount: number | null; currency?: string; payer: string | null; participants: string[] | null; category: Category | null; treat: boolean } };
+type Case = { id: string; kind: "text" | "voice"; text: string; tags?: string[]; expected: { decision: "auto" | "ask" | "reject"; amount: number | null; currency?: string; payer: string | null; participants: string[] | null; category: Category | null; treat: boolean } };
 
 async function main() {
-  const { MODEL } = await import("../lib/claude");
+  const { EXTRACT_MODEL: MODEL } = await import("../lib/claude");
   const { estimateCost } = await import("../lib/telemetry");
-  const { cases } = JSON.parse(readFileSync("eval/cases.json", "utf8")) as { cases: Case[] };
-  const only = process.argv[2];
+  const argv = process.argv.slice(2);
+  const opt = (name: string) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
+  const casesFile = opt("--cases") ?? "eval/cases.json";
+  const label = opt("--label");
+  const only = argv.find((a, i) => !a.startsWith("--") && (i === 0 || !argv[i - 1].startsWith("--")));
+  const { cases } = JSON.parse(readFileSync(casesFile, "utf8")) as { cases: Case[] };
   const list = only ? cases.filter((c) => c.id === only) : cases;
   const trip = SEED().trips[0];
   const nameOf = (id?: string) => trip.members.find((m) => m.id === id)?.name ?? null;
@@ -64,18 +69,30 @@ async function main() {
         if (ok[k]) acc[k]++;
       }
       const pass = Object.values(ok).every((v) => v !== false);
-      rows.push({ id: c.id, pass, ms: Date.now() - started, text: c.text, expected: e, got, ok });
+      rows.push({ id: c.id, kind: c.kind, tags: c.tags ?? [], pass, ms: Date.now() - started, text: c.text, expected: e, got, ok });
       console.log(`${pass ? "✓" : "✗"} ${c.id} ${c.text.slice(0, 28).padEnd(30)} ${got.decision.padEnd(6)} ${String(got.amount).padEnd(6)} ${String(got.payer).padEnd(4)} ${got.participants.join("/")}${!pass ? "   ← " + Object.entries(ok).filter(([, v]) => v === false).map(([k]) => k).join(",") : ""}`);
     } catch (err) {
-      rows.push({ id: c.id, pass: false, error: err instanceof Error ? err.message : String(err) });
+      rows.push({ id: c.id, kind: c.kind, tags: c.tags ?? [], pass: false, error: err instanceof Error ? err.message : String(err) });
       console.log(`✗ ${c.id} ERROR ${err instanceof Error ? err.message : err}`);
       n.decision++;
     }
   }
 
   const pct = (k: keyof typeof acc) => (n[k] ? Math.round((acc[k] / n[k]) * 1000) / 10 : null);
+  // 按维度（tags）汇总：每个标签下有多少例、过了多少、没过的是谁
+  const byTag: Record<string, { n: number; pass: number; failed: string[] }> = {};
+  for (const r of rows) for (const t of (r.tags as string[])) {
+    byTag[t] ??= { n: 0, pass: 0, failed: [] };
+    byTag[t].n++;
+    if (r.pass) byTag[t].pass++; else byTag[t].failed.push(r.id as string);
+  }
+  const byKind: Record<string, { n: number; pass: number }> = {};
+  for (const r of rows) { const k = r.kind as string; byKind[k] ??= { n: 0, pass: 0 }; byKind[k].n++; if (r.pass) byKind[k].pass++; }
+  const failures = rows.filter((r) => !r.pass).map((r) => ({ id: r.id, tags: r.tags, wrong: r.ok ? Object.entries(r.ok as Record<string, boolean | null>).filter(([, v]) => v === false).map(([k]) => k) : ["error"], expected: r.expected, got: r.got }));
   const summary = {
     at: new Date().toISOString(),
+    label,
+    casesFile,
     model: MODEL,
     effort: process.env.TRIPSPLIT_EFFORT ?? "medium",
     cases: list.length,
@@ -89,12 +106,16 @@ async function main() {
     tokens: { input, output },
     cost_usd: estimateCost(MODEL, input, output),
     ms: Date.now() - t0,
+    byKind,
+    byTag,
   };
-  console.log("\n" + JSON.stringify(summary, null, 2));
+  console.log("\n" + JSON.stringify({ ...summary, byTag: undefined }, null, 2));
+  console.log("\n按维度（未全过的）：");
+  for (const [t, v] of Object.entries(byTag).sort((a, b) => b[1].failed.length - a[1].failed.length)) if (v.failed.length) console.log(`  ${t.padEnd(20)} ${v.pass}/${v.n}  ✗ ${v.failed.join(",")}`);
 
   mkdirSync("eval/results", { recursive: true });
-  const file = `eval/results/${summary.at.replace(/[:.]/g, "-")}.json`;
-  writeFileSync(file, JSON.stringify({ summary, rows }, null, 2));
+  const file = `eval/results/${summary.at.replace(/[:.]/g, "-")}${label ? "-" + label.replace(/[^\w\u4e00-\u9fa5-]+/g, "_") : ""}.json`;
+  writeFileSync(file, JSON.stringify({ summary, failures, rows }, null, 2));
   console.log(`结果已写入 ${file}`);
 
   try {

@@ -1,7 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 // DECISION: 模型与 effort 走环境变量，方便 eval 时对比，不改代码。
+// 核账 Agent、检索、报告、导入默认 opus（没做过同样的评测）；TRIPSPLIT_MODEL 一次覆盖全部路径。
 export const MODEL = process.env.TRIPSPLIT_MODEL ?? "claude-opus-5-5";
+// 录入解析默认 sonnet：2026-11-10 的 100 例评测里 sonnet 97 / opus 96 / haiku 88 通过，
+// sonnet 单条成本是 opus 的 19%、耗时少约四成（docs/评测-2026-11-10.md）。TRIPSPLIT_EXTRACT_MODEL 只覆盖这一路径。
+export const EXTRACT_MODEL = process.env.TRIPSPLIT_EXTRACT_MODEL ?? process.env.TRIPSPLIT_MODEL ?? "claude-sonnet-5-5";
 export type Effort = "low" | "medium" | "high";
 export const EFFORT = (process.env.TRIPSPLIT_EFFORT ?? "medium") as Effort;
 

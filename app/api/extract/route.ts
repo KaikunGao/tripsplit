@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { friendlyError } from "@/lib/claude";
+import { friendlyError, EXTRACT_MODEL } from "@/lib/claude";
 import { extract } from "@/lib/extract/extract";
 import { ExtractRequestSchema } from "@/lib/extract/schema";
 import { record } from "@/lib/telemetry";
@@ -14,11 +14,11 @@ export async function POST(req: Request) {
   const t0 = Date.now();
   try {
     const r = await extract(parsed.data);
-    void record({ route: "extract", ok: true, ms: Date.now() - t0, input: r.usage?.input ?? 0, output: r.usage?.output ?? 0, meta: { kind: parsed.data.kind, decision: r.decision } });
+    void record({ route: "extract", model: EXTRACT_MODEL, ok: true, ms: Date.now() - t0, input: r.usage?.input ?? 0, output: r.usage?.output ?? 0, meta: { kind: parsed.data.kind, decision: r.decision } });
     return NextResponse.json(r);
   } catch (err) {
     const { message, status } = friendlyError(err);
-    void record({ route: "extract", ok: false, ms: Date.now() - t0, input: 0, output: 0, error: message });
+    void record({ route: "extract", model: EXTRACT_MODEL, ok: false, ms: Date.now() - t0, input: 0, output: 0, error: message });
     return NextResponse.json({ ok: false, error: message }, { status });
   }
 }

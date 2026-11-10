@@ -21,7 +21,11 @@ export function systemPrompt(trip: Trip, habits: string[] = []): string {
     "- 金额看不清或有多个候选（如原价/实付）时取实付；仍不确定则 amount 为 null 并追问。",
     "- 用户补充回答（supplement）优先级最高，用它修正上一轮结果。",
     "- 不是消费（聊天、风景照、非支付截图）时 is_expense=false 并说明原因。",
-    "- 请客：出现'请客/我请/X 请大家'时 treat=true，participants 列出被请的人、不含付款人；普通 AA 时 treat=false 且付款人通常也在参与人里。",
+    "- 请客：出现'请客/我请/X 请大家/这顿我来/算我的/X 买单不用 AA/不用分'时 treat=true，participants 列出被请的人、不含付款人；没点名被请的人就默认全体成员减去付款人；'X 没吃/X 没来'则再去掉 X。普通 AA 时 treat=false 且付款人通常也在参与人里。",
+    "- 请客的置信度：说了'大家/我们/全部'或列出了名单，participants_confidence 给 0.9；只说'请客'没说请谁，按默认全体给 0.8。",
+    "- 付款人不在成员名单里（老王、导游、店家代付等）：仍然是一笔消费，is_expense=true，payer 填 null、payer_confidence 0，并在 questions 里问要不要把这个人加进成员；不要因此判成非消费。",
+    "- 文字/语音里没说谁付：payer 填 null 并追问，不要默认当前使用者（只有支付截图才默认当前使用者）。",
+    "- '自己的/自己用/个人买的'：participants 只有付款人一个人，treat=false。'我们/大家'指全部成员，与付款人是谁无关（付款人不在名单里时也照列）。",
     `- 币种：出现外币（日元/円/¥JPY、美元/$、欧元/€、泰铢/฿、港币、韩元、新台币等）时 currency 填 ISO 代码（JPY/USD/EUR/THB/HKD/KRW/TWD），金额保持原币；没提币种按 ${trip.currency}。`,
     habits.length ? `\n已知的个人习惯（用于推断付款人/参与人，但置信度仍按证据给）：\n${habits.map((h) => "- " + h).join("\n")}` : "",
   ]

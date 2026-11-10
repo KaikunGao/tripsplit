@@ -1,5 +1,5 @@
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { EFFORT, MODEL, client } from "../claude";
+import { EFFORT, EXTRACT_MODEL, client } from "../claude";
 import type { Member, Trip } from "../types";
 import { systemPrompt, userContent } from "./prompt";
 import { ModelOutputSchema, type ExtractRequest, type ExtractResponse, type ModelOutput } from "./schema";
@@ -87,7 +87,7 @@ export function decide(trip: Trip, out: ModelOutput): ExtractResponse {
 
 export async function extract(req: ExtractRequest): Promise<ExtractResponse> {
   const res = await client().messages.parse({
-    model: MODEL,
+    model: EXTRACT_MODEL,
     max_tokens: 2048,
     system: [{ type: "text", text: systemPrompt(req.trip, req.habits ?? []), cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: userContent(req) }],

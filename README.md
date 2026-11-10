@@ -102,4 +102,4 @@ npm run cf:deploy
 | `eval/` `scripts/eval.ts` | 录入解析评测集与评测脚本 |
 | `components/` | 面板与通用组件 |
 
-模型默认 `claude-opus-5-5`，可用 `TRIPSPLIT_MODEL` / `TRIPSPLIT_EFFORT` 覆盖。
+录入解析默认 `claude-sonnet-5-5`（2026-11-10 的 100 例评测里与 opus 同准、成本 19%，见 `docs/评测-2026-11-10.md`），核账 / 检索 / 报告 / 导入默认 `claude-opus-5-5`；`TRIPSPLIT_MODEL` 一次覆盖全部，`TRIPSPLIT_EXTRACT_MODEL` 只覆盖录入，`TRIPSPLIT_EFFORT` 调 effort。

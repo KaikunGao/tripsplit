@@ -1,25 +1,2053 @@
 {
-  "_comment": "录入解析评测集：输入是文字/语音转写，expected 是人工标注。participants 用成员名；null 表示不关心该字段。trip 固定用示例旅行（小明=我、小华、阿强、小林，2025-10-01~04）。",
-  "cases": [
-    { "id": "t01", "kind": "text", "text": "阿强付的火锅 412，大家 AA", "expected": { "decision": "auto", "amount": 412, "payer": "阿强", "participants": ["小明", "小华", "阿强", "小林"], "category": "餐饮", "treat": false } },
-    { "id": "t02", "kind": "text", "text": "今天中午小华请大家吃了串串，一共 268", "expected": { "decision": "auto", "amount": 268, "payer": "小华", "participants": ["小明", "阿强", "小林"], "category": "餐饮", "treat": true } },
-    { "id": "t03", "kind": "text", "text": "打车 58", "expected": { "decision": "ask", "amount": 58, "payer": null, "participants": null, "category": "交通", "treat": false } },
-    { "id": "t04", "kind": "text", "text": "我付的青城山门票 4 张 320", "expected": { "decision": "ask", "amount": 320, "payer": "小明", "participants": null, "category": "门票", "treat": false } },
-    { "id": "t05", "kind": "text", "text": "我和小林打车去宽窄巷子 23 块，我付的", "expected": { "decision": "auto", "amount": 23, "payer": "小明", "participants": ["小明", "小林"], "category": "交通", "treat": false } },
-    { "id": "t06", "kind": "voice", "text": "小林付了酒店两晚一共一千二百八，四个人平摊", "expected": { "decision": "auto", "amount": 1280, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "住宿", "treat": false } },
-    { "id": "t07", "kind": "text", "text": "今天天气真好，熊猫基地人好多", "expected": { "decision": "reject", "amount": null, "payer": null, "participants": null, "category": null, "treat": false } },
-    { "id": "t08", "kind": "text", "text": "阿强买了伴手礼 600，他自己的", "expected": { "decision": "auto", "amount": 600, "payer": "阿强", "participants": ["阿强"], "category": "购物", "treat": false } },
-    { "id": "t09", "kind": "voice", "text": "我请小华喝奶茶三十二", "expected": { "decision": "auto", "amount": 32, "payer": "小明", "participants": ["小华"], "category": "餐饮", "treat": true } },
-    { "id": "t10", "kind": "text", "text": "小华付的 KTV 388，我们四个", "expected": { "decision": "auto", "amount": 388, "payer": "小华", "participants": ["小明", "小华", "阿强", "小林"], "category": "娱乐", "treat": false } },
-    { "id": "t11", "kind": "text", "text": "地铁 4 块，我和阿强", "expected": { "decision": "ask", "amount": 4, "payer": null, "participants": ["小明", "阿强"], "category": "交通", "treat": false } },
-    { "id": "t12", "kind": "text", "text": "小林垫的机场大巴，一人 20，四个人", "expected": { "decision": "auto", "amount": 80, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "交通", "treat": false } },
-    { "id": "t13", "kind": "text", "text": "晚饭日料 318 小林付，四人", "expected": { "decision": "auto", "amount": 318, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "餐饮", "treat": false } },
-    { "id": "t14", "kind": "text", "text": "我用支付宝付了锦里的三大炮 52，小华和我吃的", "expected": { "decision": "auto", "amount": 52, "payer": "小明", "participants": ["小明", "小华"], "category": "餐饮", "treat": false } },
-    { "id": "t15", "kind": "voice", "text": "小华买的机场早餐", "expected": { "decision": "ask", "amount": null, "payer": "小华", "participants": null, "category": "餐饮", "treat": false } },
-    { "id": "t16", "kind": "text", "text": "包车一天 350 小林付的 大家", "expected": { "decision": "auto", "amount": 350, "payer": "小林", "participants": ["小明", "小华", "阿强", "小林"], "category": "交通", "treat": false } },
-    { "id": "t17", "kind": "text", "text": "老王请我们吃饭 500", "expected": { "decision": "ask", "amount": 500, "payer": null, "participants": null, "category": "餐饮", "treat": true } },
-    { "id": "t18", "kind": "text", "text": "民宿押金 200 阿强先垫，到时候退", "expected": { "decision": "ask", "amount": 200, "payer": "阿强", "participants": null, "category": "住宿", "treat": false } },
-    { "id": "t19", "kind": "text", "text": "小华付的 3000 日元拉面，我们四个吃的", "expected": { "decision": "auto", "amount": 3000, "currency": "JPY", "payer": "小华", "participants": ["小明", "小华", "阿强", "小林"], "category": "餐饮", "treat": false } },
-    { "id": "t20", "kind": "text", "text": "门票 我付 4 个人 一共 240", "expected": { "decision": "auto", "amount": 240, "payer": "小明", "participants": ["小明", "小华", "阿强", "小林"], "category": "门票", "treat": false } }
-  ]
+ "_comment": "录入解析评测集 v2（2026-11-10，20 → 100 例）。输入是文字/语音转写，expected 是人工标注；participants 用成员名，null 表示不评该字段。trip 固定用示例旅行（小明=我、小华、阿强、小林，2025-10-01~04，CNY）。t01–t20 是 2026-11-04 的 v1 原集（原样保留，另存 cases-v1-20.json），c21–c100 为 2026-11-10 构造：线上遥测里没有录入原文（runs 表只有 2 条且都不是 extract），所以 80 例全部按旅行记账的表达方式分层构造，tags 标注每例考察的维度（amt-cn 中文数字、amt-calc 需计算、amt-multi 多金额候选、payer-self/alias/outsider/multi/missing、part-all/subset/exclude/missing、treat、self-only、currency、cat-hard、reject、voice-noise、multi-expense、deposit、time）。",
+ "cases": [
+  {
+   "id": "t01",
+   "kind": "text",
+   "text": "阿强付的火锅 412，大家 AA",
+   "expected": {
+    "decision": "auto",
+    "amount": 412,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   },
+   "tags": [
+    "part-all"
+   ]
+  },
+  {
+   "id": "t02",
+   "kind": "text",
+   "text": "今天中午小华请大家吃了串串，一共 268",
+   "expected": {
+    "decision": "auto",
+    "amount": 268,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": true
+   },
+   "tags": [
+    "treat"
+   ]
+  },
+  {
+   "id": "t03",
+   "kind": "text",
+   "text": "打车 58",
+   "expected": {
+    "decision": "ask",
+    "amount": 58,
+    "payer": null,
+    "participants": null,
+    "category": "交通",
+    "treat": false
+   },
+   "tags": [
+    "payer-missing",
+    "part-missing"
+   ]
+  },
+  {
+   "id": "t04",
+   "kind": "text",
+   "text": "我付的青城山门票 4 张 320",
+   "expected": {
+    "decision": "ask",
+    "amount": 320,
+    "payer": "小明",
+    "participants": null,
+    "category": "门票",
+    "treat": false
+   },
+   "tags": [
+    "part-missing",
+    "payer-self"
+   ]
+  },
+  {
+   "id": "t05",
+   "kind": "text",
+   "text": "我和小林打车去宽窄巷子 23 块，我付的",
+   "expected": {
+    "decision": "auto",
+    "amount": 23,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   },
+   "tags": [
+    "payer-self",
+    "part-subset"
+   ]
+  },
+  {
+   "id": "t06",
+   "kind": "voice",
+   "text": "小林付了酒店两晚一共一千二百八，四个人平摊",
+   "expected": {
+    "decision": "auto",
+    "amount": 1280,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "住宿",
+    "treat": false
+   },
+   "tags": [
+    "voice",
+    "amt-cn",
+    "part-all"
+   ]
+  },
+  {
+   "id": "t07",
+   "kind": "text",
+   "text": "今天天气真好，熊猫基地人好多",
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   },
+   "tags": [
+    "reject"
+   ]
+  },
+  {
+   "id": "t08",
+   "kind": "text",
+   "text": "阿强买了伴手礼 600，他自己的",
+   "expected": {
+    "decision": "auto",
+    "amount": 600,
+    "payer": "阿强",
+    "participants": [
+     "阿强"
+    ],
+    "category": "购物",
+    "treat": false
+   },
+   "tags": [
+    "self-only"
+   ]
+  },
+  {
+   "id": "t09",
+   "kind": "voice",
+   "text": "我请小华喝奶茶三十二",
+   "expected": {
+    "decision": "auto",
+    "amount": 32,
+    "payer": "小明",
+    "participants": [
+     "小华"
+    ],
+    "category": "餐饮",
+    "treat": true
+   },
+   "tags": [
+    "treat",
+    "voice",
+    "amt-cn"
+   ]
+  },
+  {
+   "id": "t10",
+   "kind": "text",
+   "text": "小华付的 KTV 388，我们四个",
+   "expected": {
+    "decision": "auto",
+    "amount": 388,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "娱乐",
+    "treat": false
+   },
+   "tags": [
+    "part-all"
+   ]
+  },
+  {
+   "id": "t11",
+   "kind": "text",
+   "text": "地铁 4 块，我和阿强",
+   "expected": {
+    "decision": "ask",
+    "amount": 4,
+    "payer": null,
+    "participants": [
+     "小明",
+     "阿强"
+    ],
+    "category": "交通",
+    "treat": false
+   },
+   "tags": [
+    "payer-missing",
+    "part-subset"
+   ]
+  },
+  {
+   "id": "t12",
+   "kind": "text",
+   "text": "小林垫的机场大巴，一人 20，四个人",
+   "expected": {
+    "decision": "auto",
+    "amount": 80,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   },
+   "tags": [
+    "amt-calc",
+    "part-all"
+   ]
+  },
+  {
+   "id": "t13",
+   "kind": "text",
+   "text": "晚饭日料 318 小林付，四人",
+   "expected": {
+    "decision": "auto",
+    "amount": 318,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   },
+   "tags": [
+    "part-all"
+   ]
+  },
+  {
+   "id": "t14",
+   "kind": "text",
+   "text": "我用支付宝付了锦里的三大炮 52，小华和我吃的",
+   "expected": {
+    "decision": "auto",
+    "amount": 52,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华"
+    ],
+    "category": "餐饮",
+    "treat": false
+   },
+   "tags": [
+    "payer-self",
+    "part-subset"
+   ]
+  },
+  {
+   "id": "t15",
+   "kind": "voice",
+   "text": "小华买的机场早餐",
+   "expected": {
+    "decision": "ask",
+    "amount": null,
+    "payer": "小华",
+    "participants": null,
+    "category": "餐饮",
+    "treat": false
+   },
+   "tags": [
+    "amt-missing",
+    "part-missing",
+    "voice"
+   ]
+  },
+  {
+   "id": "t16",
+   "kind": "text",
+   "text": "包车一天 350 小林付的 大家",
+   "expected": {
+    "decision": "auto",
+    "amount": 350,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   },
+   "tags": [
+    "part-all"
+   ]
+  },
+  {
+   "id": "t17",
+   "kind": "text",
+   "text": "老王请我们吃饭 500",
+   "expected": {
+    "decision": "ask",
+    "amount": 500,
+    "payer": null,
+    "participants": null,
+    "category": "餐饮",
+    "treat": true
+   },
+   "tags": [
+    "payer-outsider",
+    "treat"
+   ]
+  },
+  {
+   "id": "t18",
+   "kind": "text",
+   "text": "民宿押金 200 阿强先垫，到时候退",
+   "expected": {
+    "decision": "ask",
+    "amount": 200,
+    "payer": "阿强",
+    "participants": null,
+    "category": "住宿",
+    "treat": false
+   },
+   "tags": [
+    "deposit"
+   ]
+  },
+  {
+   "id": "t19",
+   "kind": "text",
+   "text": "小华付的 3000 日元拉面，我们四个吃的",
+   "expected": {
+    "decision": "auto",
+    "amount": 3000,
+    "currency": "JPY",
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   },
+   "tags": [
+    "currency",
+    "part-all"
+   ]
+  },
+  {
+   "id": "t20",
+   "kind": "text",
+   "text": "门票 我付 4 个人 一共 240",
+   "expected": {
+    "decision": "auto",
+    "amount": 240,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   },
+   "tags": [
+    "payer-self",
+    "part-all"
+   ]
+  },
+  {
+   "id": "c21",
+   "kind": "text",
+   "text": "火锅两百五，小华付的，我们四个",
+   "tags": [
+    "amt-cn",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 250,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c22",
+   "kind": "voice",
+   "text": "小林付的门票三百六十八四个人一起",
+   "tags": [
+    "voice",
+    "amt-cn",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 368,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c23",
+   "kind": "text",
+   "text": "我买的水 5 块 5，我自己喝的",
+   "tags": [
+    "amt-decimal",
+    "self-only",
+    "payer-self"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 5.5,
+    "payer": "小明",
+    "participants": [
+     "小明"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c24",
+   "kind": "text",
+   "text": "阿强付了 1,280 的酒店，大家平摊",
+   "tags": [
+    "amt-format",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 1280,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "住宿",
+    "treat": false
+   }
+  },
+  {
+   "id": "c25",
+   "kind": "text",
+   "text": "滴滴 3 次一共 96，我付的，四个人",
+   "tags": [
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 96,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c26",
+   "kind": "text",
+   "text": "我付了缆车票，一人 60，我们四个",
+   "tags": [
+    "amt-calc",
+    "payer-self",
+    "part-all",
+    "cat-hard"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 240,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c27",
+   "kind": "text",
+   "text": "小华给了 200 找回 42，买的零食，大家吃",
+   "tags": [
+    "amt-calc",
+    "part-all",
+    "cat-hard"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 158,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c28",
+   "kind": "text",
+   "text": "午饭原价 300 用了券实付 268，阿强付的，四个人",
+   "tags": [
+    "amt-multi",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 268,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c29",
+   "kind": "text",
+   "text": "民宿两晚 980，我先垫了，大家分",
+   "tags": [
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 980,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "住宿",
+    "treat": false
+   }
+  },
+  {
+   "id": "c30",
+   "kind": "text",
+   "text": "我和小华 AA 了一顿烧烤 160，我付",
+   "tags": [
+    "payer-self",
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 160,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c31",
+   "kind": "text",
+   "text": "阿强和小林打车 35，小林付的",
+   "tags": [
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 35,
+    "payer": "小林",
+    "participants": [
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c32",
+   "kind": "text",
+   "text": "大家的门票 480 小林付的，除了阿强他没去",
+   "tags": [
+    "part-exclude"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 480,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c33",
+   "kind": "text",
+   "text": "晚饭 360 我付，小华没来，剩下的人分",
+   "tags": [
+    "part-exclude",
+    "payer-self"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 360,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c34",
+   "kind": "text",
+   "text": "我请大家吃了火锅 520",
+   "tags": [
+    "treat",
+    "payer-self"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 520,
+    "payer": "小明",
+    "participants": [
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c35",
+   "kind": "text",
+   "text": "小林请客，奶茶四杯 72",
+   "tags": [
+    "treat"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 72,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c36",
+   "kind": "text",
+   "text": "阿强请我和小华吃了冰粉 18",
+   "tags": [
+    "treat",
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 18,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c37",
+   "kind": "text",
+   "text": "我自己买了件衣服 299",
+   "tags": [
+    "self-only",
+    "payer-self"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 299,
+    "payer": "小明",
+    "participants": [
+     "小明"
+    ],
+    "category": "购物",
+    "treat": false
+   }
+  },
+  {
+   "id": "c38",
+   "kind": "text",
+   "text": "小华买了个充电宝 129，她自己用的",
+   "tags": [
+    "self-only"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 129,
+    "payer": "小华",
+    "participants": [
+     "小华"
+    ],
+    "category": "购物",
+    "treat": false
+   }
+  },
+  {
+   "id": "c39",
+   "kind": "text",
+   "text": "强哥付的烤鱼 198，四人",
+   "tags": [
+    "payer-alias",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 198,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c40",
+   "kind": "voice",
+   "text": "小花付的午饭一百零五我们四个",
+   "tags": [
+    "voice",
+    "voice-noise",
+    "amt-cn",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 105,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c41",
+   "kind": "voice",
+   "text": "阿墙垫的高铁票四张六百四",
+   "tags": [
+    "voice",
+    "voice-noise",
+    "amt-cn",
+    "part-missing"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 640,
+    "payer": "阿强",
+    "participants": null,
+    "category": "交通",
+    "treat": false
+   },
+   "_note": "2026-11-10 改标：原标 auto+全员，与 v1 t04（'4 张' 不等于参与人）口径冲突，改为 ask；改在 before 跑完之后，前后对比时此例按新标重算"
+  },
+  {
+   "id": "c42",
+   "kind": "voice",
+   "text": "嗯那个林子付的那个什么夜宵八十八我们都吃了",
+   "tags": [
+    "voice",
+    "voice-noise",
+    "payer-alias",
+    "amt-cn",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 88,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c43",
+   "kind": "text",
+   "text": "老王帮我们付了门票 400",
+   "tags": [
+    "payer-outsider",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 400,
+    "payer": null,
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c44",
+   "kind": "text",
+   "text": "导游代付的午餐 600，四个人",
+   "tags": [
+    "payer-outsider",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 600,
+    "payer": null,
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c45",
+   "kind": "text",
+   "text": "我和阿强各付一半的房费，一共 800，四个人住",
+   "tags": [
+    "payer-multi",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 800,
+    "payer": null,
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "住宿",
+    "treat": false
+   }
+  },
+  {
+   "id": "c46",
+   "kind": "text",
+   "text": "火锅 300，我们四个",
+   "tags": [
+    "payer-missing",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 300,
+    "payer": null,
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c47",
+   "kind": "text",
+   "text": "小华付了 120",
+   "tags": [
+    "part-missing"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 120,
+    "payer": "小华",
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c48",
+   "kind": "text",
+   "text": "我们三个吃了面 45，小林付的",
+   "tags": [
+    "part-count-mismatch"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 45,
+    "payer": "小林",
+    "participants": null,
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c49",
+   "kind": "text",
+   "text": "阿强付的 KTV，大家唱的",
+   "tags": [
+    "amt-missing",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": null,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "娱乐",
+    "treat": false
+   }
+  },
+  {
+   "id": "c50",
+   "kind": "text",
+   "text": "门票多少钱来着，小华付的，我们四个",
+   "tags": [
+    "amt-missing",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": null,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c51",
+   "kind": "text",
+   "text": "小华付的拉面 2400 日元，我们四个",
+   "tags": [
+    "currency",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 2400,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false,
+    "currency": "JPY"
+   }
+  },
+  {
+   "id": "c52",
+   "kind": "voice",
+   "text": "我付的寿司一万两千日元四个人",
+   "tags": [
+    "voice",
+    "currency",
+    "amt-cn",
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 12000,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false,
+    "currency": "JPY"
+   }
+  },
+  {
+   "id": "c53",
+   "kind": "text",
+   "text": "阿强付的泰国按摩 1200 泰铢，我和他",
+   "tags": [
+    "currency",
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 1200,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "阿强"
+    ],
+    "category": "娱乐",
+    "treat": false,
+    "currency": "THB"
+   }
+  },
+  {
+   "id": "c54",
+   "kind": "text",
+   "text": "小林买的 50 美金的门票，我们四个",
+   "tags": [
+    "currency",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 50,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false,
+    "currency": "USD"
+   }
+  },
+  {
+   "id": "c55",
+   "kind": "text",
+   "text": "港币 380 的海洋公园门票，我付的，四人",
+   "tags": [
+    "currency",
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 380,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false,
+    "currency": "HKD"
+   }
+  },
+  {
+   "id": "c56",
+   "kind": "text",
+   "text": "欧元 60 的晚餐，小华付的，大家",
+   "tags": [
+    "currency",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 60,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false,
+    "currency": "EUR"
+   }
+  },
+  {
+   "id": "c57",
+   "kind": "text",
+   "text": "人民币 88 的宵夜，小林付，四人",
+   "tags": [
+    "currency",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 88,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false,
+    "currency": "CNY"
+   }
+  },
+  {
+   "id": "c58",
+   "kind": "text",
+   "text": "温泉票 4 张 720，阿强付的，大家",
+   "tags": [
+    "cat-hard",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 720,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c59",
+   "kind": "text",
+   "text": "寄存行李 40，我付的，四个人的箱子",
+   "tags": [
+    "cat-other",
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 40,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "其他",
+    "treat": false
+   }
+  },
+  {
+   "id": "c60",
+   "kind": "text",
+   "text": "景区内观光车 一人 20 四个人 小华付的",
+   "tags": [
+    "amt-calc",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 80,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c61",
+   "kind": "text",
+   "text": "我买了明信片和邮票 36，自己的",
+   "tags": [
+    "self-only",
+    "payer-self"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 36,
+    "payer": "小明",
+    "participants": [
+     "小明"
+    ],
+    "category": "购物",
+    "treat": false
+   }
+  },
+  {
+   "id": "c62",
+   "kind": "text",
+   "text": "小林付的超市采购 215，大家吃的零食饮料",
+   "tags": [
+    "cat-hard",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 215,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c63",
+   "kind": "text",
+   "text": "医药费 68，阿强买的感冒药，他自己的",
+   "tags": [
+    "cat-other",
+    "self-only"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 68,
+    "payer": "阿强",
+    "participants": [
+     "阿强"
+    ],
+    "category": "其他",
+    "treat": false
+   }
+  },
+  {
+   "id": "c64",
+   "kind": "text",
+   "text": "租车一天 450，我付，四个人用",
+   "tags": [
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 450,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c65",
+   "kind": "text",
+   "text": "电影票 4 张 160，小华买的，我们四个",
+   "tags": [
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 160,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "娱乐",
+    "treat": false
+   }
+  },
+  {
+   "id": "c66",
+   "kind": "text",
+   "text": "明天几点出发去都江堰？",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c67",
+   "kind": "text",
+   "text": "这家火锅真好吃，下次还来",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c68",
+   "kind": "text",
+   "text": "刚才那笔打车记了吗",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c69",
+   "kind": "text",
+   "text": "酒店 wifi 密码是 12345678",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c70",
+   "kind": "text",
+   "text": "小华说她晚点到",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c71",
+   "kind": "text",
+   "text": "帮我算一下大家现在谁欠谁",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c72",
+   "kind": "text",
+   "text": "取消了明天的包车，不用记",
+   "tags": [
+    "reject"
+   ],
+   "expected": {
+    "decision": "reject",
+    "amount": null,
+    "payer": null,
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c73",
+   "kind": "text",
+   "text": "阿强付的午饭 150 还有打车 30",
+   "tags": [
+    "multi-expense"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": null,
+    "payer": "阿强",
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c74",
+   "kind": "text",
+   "text": "门票 240 小华付的，我们四个；对了她还买了水 10 块自己喝",
+   "tags": [
+    "multi-expense"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": null,
+    "payer": "小华",
+    "participants": null,
+    "category": null,
+    "treat": false
+   }
+  },
+  {
+   "id": "c75",
+   "kind": "text",
+   "text": "住宿押金 500 我付的，退房时退",
+   "tags": [
+    "deposit",
+    "payer-self"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 500,
+    "payer": "小明",
+    "participants": null,
+    "category": "住宿",
+    "treat": false
+   }
+  },
+  {
+   "id": "c76",
+   "kind": "text",
+   "text": "昨天晚上小林付的夜宵 96，四个人",
+   "tags": [
+    "time",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 96,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c77",
+   "kind": "text",
+   "text": "10 月 2 号中午的午饭 260，阿强付，大家",
+   "tags": [
+    "time",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 260,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c78",
+   "kind": "text",
+   "text": "刚刚地铁 我刷的 我和小华 6 块",
+   "tags": [
+    "payer-self",
+    "part-subset",
+    "word-order"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 6,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c79",
+   "kind": "text",
+   "text": "AA 一下，晚饭 404，阿强付的",
+   "tags": [
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 404,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c80",
+   "kind": "text",
+   "text": "所有人的早餐 100，我付",
+   "tags": [
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 100,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c81",
+   "kind": "text",
+   "text": "全员门票 520 小华付",
+   "tags": [
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 520,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c82",
+   "kind": "text",
+   "text": "咱们四个的大巴 120，小林付",
+   "tags": [
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 120,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c83",
+   "kind": "text",
+   "text": "小华和阿强的房间 600 小华付的",
+   "tags": [
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 600,
+    "payer": "小华",
+    "participants": [
+     "小华",
+     "阿强"
+    ],
+    "category": "住宿",
+    "treat": false
+   }
+  },
+  {
+   "id": "c84",
+   "kind": "text",
+   "text": "我帮小林垫了门票 120，她的",
+   "tags": [
+    "payer-self",
+    "part-subset",
+    "advance-for-other"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 120,
+    "payer": "小明",
+    "participants": [
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c85",
+   "kind": "text",
+   "text": "小林的那份午饭 45 我先付了",
+   "tags": [
+    "payer-self",
+    "part-subset",
+    "advance-for-other"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 45,
+    "payer": "小明",
+    "participants": [
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c86",
+   "kind": "text",
+   "text": "买了四瓶水 12 块，阿强付的，一人一瓶",
+   "tags": [
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 12,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c87",
+   "kind": "text",
+   "text": "小华付的 3 张门票 150，我、小华、小林",
+   "tags": [
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 150,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c88",
+   "kind": "text",
+   "text": "阿强付的晚饭 388，我们仨：我、阿强、小华",
+   "tags": [
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 388,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "阿强",
+     "小华"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c89",
+   "kind": "voice",
+   "text": "两百八的烤肉我付的大家一起",
+   "tags": [
+    "voice",
+    "amt-cn",
+    "payer-self",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 280,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c90",
+   "kind": "voice",
+   "text": "小林付了两千块酒店四个人住的",
+   "tags": [
+    "voice",
+    "amt-cn",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 2000,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "住宿",
+    "treat": false
+   }
+  },
+  {
+   "id": "c91",
+   "kind": "voice",
+   "text": "我付的出租车五十八块五我和阿强坐的",
+   "tags": [
+    "voice",
+    "amt-cn",
+    "amt-decimal",
+    "payer-self",
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 58.5,
+    "payer": "小明",
+    "participants": [
+     "小明",
+     "阿强"
+    ],
+    "category": "交通",
+    "treat": false
+   }
+  },
+  {
+   "id": "c92",
+   "kind": "text",
+   "text": "门票一共 480，4 个人，小林付的，每人 120",
+   "tags": [
+    "amt-multi",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 480,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c93",
+   "kind": "text",
+   "text": "每人 95 的套餐，我们四个，小华付的",
+   "tags": [
+    "amt-calc",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 380,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c94",
+   "kind": "text",
+   "text": "火锅 500，阿强付了 300 我付了 200，四个人吃",
+   "tags": [
+    "payer-multi",
+    "part-all"
+   ],
+   "expected": {
+    "decision": "ask",
+    "amount": 500,
+    "payer": null,
+    "participants": [
+     "小明",
+     "小华",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  },
+  {
+   "id": "c95",
+   "kind": "text",
+   "text": "小华买单 666，她说不用 AA 她请",
+   "tags": [
+    "treat"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 666,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "阿强",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c96",
+   "kind": "text",
+   "text": "阿强说这顿他来，1,050，我们四个吃的",
+   "tags": [
+    "treat",
+    "amt-format"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 1050,
+    "payer": "阿强",
+    "participants": [
+     "小明",
+     "小华",
+     "小林"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c97",
+   "kind": "text",
+   "text": "我请小林和阿强喝了咖啡 96",
+   "tags": [
+    "treat",
+    "payer-self",
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 96,
+    "payer": "小明",
+    "participants": [
+     "小林",
+     "阿强"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c98",
+   "kind": "text",
+   "text": "小林请的夜宵 128，我没吃",
+   "tags": [
+    "treat",
+    "part-exclude"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 128,
+    "payer": "小林",
+    "participants": [
+     "小华",
+     "阿强"
+    ],
+    "category": "餐饮",
+    "treat": true
+   }
+  },
+  {
+   "id": "c99",
+   "kind": "text",
+   "text": "门票 300 小华付的，阿强自己买了自己的，我们三个分",
+   "tags": [
+    "part-exclude"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 300,
+    "payer": "小华",
+    "participants": [
+     "小明",
+     "小华",
+     "小林"
+    ],
+    "category": "门票",
+    "treat": false
+   }
+  },
+  {
+   "id": "c100",
+   "kind": "text",
+   "text": "吃饭 200 元，付款人：小林，参与：小明、小华",
+   "tags": [
+    "structured",
+    "part-subset"
+   ],
+   "expected": {
+    "decision": "auto",
+    "amount": 200,
+    "payer": "小林",
+    "participants": [
+     "小明",
+     "小华"
+    ],
+    "category": "餐饮",
+    "treat": false
+   }
+  }
+ ]
 }
