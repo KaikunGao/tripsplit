@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { MODEL } from "./claude";
 import { db } from "./db";
 
@@ -32,19 +33,31 @@ export function estimateCost(model: string, input: number, output: number): numb
 
 const mem: Run[] = [];
 
-export async function record(r: Omit<Run, "at" | "model" | "cost_usd"> & { model?: string }): Promise<void> {
+/**
+ * 记一次模型调用。内存里立刻可见；数据库写入放到响应发出之后（Next 的 after()，OpenNext 在
+ * Cloudflare 上接到 waitUntil）。2026-11-10 发现 Workers 上直接 `void` 掉的 Promise 会随请求结束被
+ * 回收，线上调用一条都没落库；Vercel 的 Node 进程没这个问题。不在请求上下文里（脚本）时退回直接写。
+ */
+export function record(r: Omit<Run, "at" | "model" | "cost_usd"> & { model?: string }): void {
   const run: Run = { at: new Date().toISOString(), model: r.model ?? MODEL, cost_usd: estimateCost(r.model ?? MODEL, r.input, r.output), ...r };
   mem.unshift(run);
   if (mem.length > 500) mem.length = 500;
-  const d = await db();
-  if (!d) return;
+  const write = async () => {
+    const d = await db();
+    if (!d) return;
+    try {
+      await d.execute({
+        sql: "INSERT INTO runs (at, route, model, ok, ms, input, output, cost_usd, error, meta) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        args: [run.at, run.route, run.model, run.ok ? 1 : 0, run.ms, run.input, run.output, run.cost_usd, run.error ?? null, run.meta ? JSON.stringify(run.meta) : null],
+      });
+    } catch (e) {
+      console.warn("telemetry write failed", e);
+    }
+  };
   try {
-    await d.execute({
-      sql: "INSERT INTO runs (at, route, model, ok, ms, input, output, cost_usd, error, meta) VALUES (?,?,?,?,?,?,?,?,?,?)",
-      args: [run.at, run.route, run.model, run.ok ? 1 : 0, run.ms, run.input, run.output, run.cost_usd, run.error ?? null, run.meta ? JSON.stringify(run.meta) : null],
-    });
-  } catch (e) {
-    console.warn("telemetry write failed", e);
+    after(write);
+  } catch {
+    void write();
   }
 }
 
