@@ -84,7 +84,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
   return (
     <div className="space-y-4">
       <Section
-        title="核账 Agent"
+        title="核账"
         right={
           <button className="btn btn-primary" disabled={busy || expenses.length === 0} onClick={run}>
             {busy ? <Spinner /> : <Icon name="shield" className="h-4 w-4" />} {busy ? "核查中…" : res ? "重新核账" : "开始核账"}
@@ -92,9 +92,9 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
         }
       >
         <p className="text-sm text-ink-600">
-          Agent 只持有对账本的<b>只读</b>工具（列账、查重、规则体检、分类统计、结算预览），逐项核查后提交带证据的结论。所有修改建议都要你逐条确认才会生效。
+          核账<b>只读不写</b>：先跑规则体检、查重、分类统计和结算预览，再由模型把结果和全部账目逐项核对，提交带证据的结论。所有修改建议都要你逐条确认才会生效。
         </p>
-        {preset && res && <p className="mt-2 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">下面是 Agent 对这本示例账跑出的一次真实结果，可以直接逐条确认或忽略，账本、预算和结算会跟着变。点「重新核账」会现场再跑一遍，约 30 秒。</p>}
+        {preset && res && <p className="mt-2 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">下面是对这本示例账跑出的一次真实核账结果，可以直接逐条确认或忽略，账本、预算和结算会跟着变。点「重新核账」会现场再跑一遍，约 30 秒。</p>}
         {err && <p className="mt-2 text-sm text-danger-700">{err}</p>}
       </Section>
 
@@ -102,7 +102,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
         <>
           <div className="card p-4">
             <div className="mb-2 flex items-center gap-2 text-sm text-ink-600">
-              <Spinner /> Agent 正在规划并调用工具，通常需要 20 到 40 秒
+              <Spinner /> 正在核查，通常需要 20 到 40 秒
             </div>
             <Skeleton lines={2} />
           </div>
@@ -126,7 +126,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
             title="结论"
             right={
               <span className="hidden text-xs text-ink-400 sm:inline">
-                {res.usage.turns} 轮 · {res.trace.filter((t) => t.kind === "tool").length} 次工具调用
+                {res.mode === "pipeline" ? `${res.trace.filter((t) => t.kind === "tool").length} 项检查 · 1 次模型调用` : `${res.usage.turns} 轮 · ${res.trace.filter((t) => t.kind === "tool").length} 次工具调用`}
               </span>
             }
           >
@@ -155,7 +155,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
 
           <div>
             <button className="text-xs text-ink-400 underline" onClick={() => setShowTrace((s) => !s)}>
-              {showTrace ? "收起" : "查看"} Agent 执行轨迹（{(res.usage.input / 1000).toFixed(1)}k 入 / {res.usage.output} 出）
+              {showTrace ? "收起" : "查看"}{res.mode === "pipeline" ? "检查过程" : " Agent 执行轨迹"}（{(res.usage.input / 1000).toFixed(1)}k 入 / {res.usage.output} 出）
             </button>
             {showTrace && (
               <ol className="mt-2 space-y-2">
@@ -171,7 +171,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
                     {t.kind === "tool" && (
                       <>
                         <div className="flex items-center gap-2">
-                          <Badge>工具</Badge>
+                          <Badge>{res.mode === "pipeline" ? "检查" : "工具"}</Badge>
                           <span className="mono font-semibold">{t.name}</span>
                           <span className="text-ink-400">{t.ms}ms</span>
                         </div>

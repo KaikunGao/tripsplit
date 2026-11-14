@@ -1,11 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 // DECISION: 模型与 effort 走环境变量，方便 eval 时对比，不改代码。
-// 核账 Agent、检索、报告、导入默认 opus（没做过同样的评测）；TRIPSPLIT_MODEL 一次覆盖全部路径。
+// 检索、报告、导入默认 opus（没做过评测）；核账也是 opus，评测见下。TRIPSPLIT_MODEL 一次覆盖全部路径。
 export const MODEL = process.env.TRIPSPLIT_MODEL ?? "claude-opus-5-5";
 // 录入解析默认 sonnet：2026-11-10 的 100 例评测里 sonnet 97 / opus 96 / haiku 88 通过，
-// sonnet 单条成本是 opus 的 19%、耗时少约四成（docs/评测-2026-11-10.md）。TRIPSPLIT_EXTRACT_MODEL 只覆盖这一路径。
+// sonnet 单条成本约为 opus 的一半（按官方价目重算，见 docs/评测-2026-11-10.md 顶部的更正）、耗时少约四成。TRIPSPLIT_EXTRACT_MODEL 只覆盖这一路径。
 export const EXTRACT_MODEL = process.env.TRIPSPLIT_EXTRACT_MODEL ?? process.env.TRIPSPLIT_MODEL ?? "claude-sonnet-5-5";
+// 核账：实现方式和模型各一个开关。TRIPSPLIT_RECONCILE_MODE = pipeline（代码按固定顺序跑完检查，模型只调用一次）
+// 或 agent（模型自己决定调哪些只读工具）。默认 pipeline + opus：2026-11-13 的对照评测里（12 本构造账本、62 处问题、各跑两遍），
+// opus 上两种做法查出的一样多（都是 123/124），固定流程每本账便宜约两成、快一成；换成 sonnet 时 Agent 循环更好（97% 对 92%）。
+// 见 docs/评测-核账-2026-11-13.md。
+export const RECONCILE_MODEL = process.env.TRIPSPLIT_RECONCILE_MODEL ?? process.env.TRIPSPLIT_MODEL ?? "claude-opus-5-5";
+export type ReconcileMode = "agent" | "pipeline";
+const rawMode = process.env.TRIPSPLIT_RECONCILE_MODE?.trim().toLowerCase();
+if (rawMode && rawMode !== "pipeline" && rawMode !== "agent") console.warn(`TRIPSPLIT_RECONCILE_MODE=${process.env.TRIPSPLIT_RECONCILE_MODE} 认不出，按默认值处理（只认 pipeline / agent）`);
+export const RECONCILE_MODE: ReconcileMode = rawMode === "agent" ? "agent" : "pipeline";
 export type Effort = "low" | "medium" | "high";
 export const EFFORT = (process.env.TRIPSPLIT_EFFORT ?? "medium") as Effort;
 

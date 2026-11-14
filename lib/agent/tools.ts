@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { computeBalances, memberName, settle, splitOf } from "../settle";
+import { computeBalances, homeAmount, memberName, settle, splitOf } from "../settle";
 import type { Expense, LedgerSnapshot } from "../types";
 
 /**
@@ -78,11 +78,13 @@ export const toolImpl: Record<string, (ctx: ToolCtx, input: Record<string, unkno
     const by: Record<string, { count: number; total: number; max: number; avg: number }> = {};
     for (const e of snap.expenses) {
       const s = (by[e.category] ??= { count: 0, total: 0, max: 0, avg: 0 });
+      // 一律折成本币再统计：外币行程里原币金额直接相加没有意义（日元和人民币混在一起）
+      const amt = homeAmount(e);
       s.count++;
-      s.total += e.amount;
-      s.max = Math.max(s.max, e.amount);
+      s.total += amt;
+      s.max = Math.max(s.max, amt);
     }
-    for (const s of Object.values(by)) s.avg = Math.round(s.total / s.count);
+    for (const s of Object.values(by)) { s.total = Math.round(s.total * 100) / 100; s.avg = Math.round(s.total / s.count); }
     return by;
   },
   get_balances({ snap }) {
@@ -123,7 +125,7 @@ export const READ_TOOLS: Anthropic.Tool[] = [
     input_schema: obj({ window_minutes: { type: "number", description: "时间窗口（分钟），默认 120" }, amount_tolerance: { type: "number", description: "金额误差，默认 0" } }, ["window_minutes", "amount_tolerance"]),
   },
   { name: "check_integrity", description: "规则体检：参与人为空、付款人不在参与人内、非成员、待补全、零金额、低置信度、日期超出旅行范围。", strict: true, input_schema: obj({}) },
-  { name: "category_stats", description: "各分类的笔数、合计、最大值、均值，用于发现金额离群。", strict: true, input_schema: obj({}) },
+  { name: "category_stats", description: "各分类的笔数、合计、最大值、均值（已折算成本币），用于发现金额离群。", strict: true, input_schema: obj({}) },
   { name: "get_balances", description: "当前每人已付/应摊/净额与最少转账方案。", strict: true, input_schema: obj({}) },
 ];
 
@@ -159,7 +161,7 @@ export const SUBMIT_TOOL: Anthropic.Tool = {
                     category: { type: ["string", "null"] },
                     note: { type: ["string", "null"] },
                     occurredAt: { type: ["string", "null"], description: "ISO 8601 本地时间，如 2025-10-02T18:30:00" },
-                    treat: { type: ["boolean", "null"], description: "改为请客（true）或取消请客（false）；不改填 null" },
+                    treat: { type: ["boolean", "null"], description: "改为请客（true：这笔全额由付款人自己承担）或取消请客（false）；不改填 null" },
                   },
                   required: ["amount", "payerId", "participantIds", "category", "note", "occurredAt", "treat"],
                   additionalProperties: false,

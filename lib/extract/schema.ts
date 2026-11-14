@@ -56,5 +56,7 @@ export const ExtractResponseSchema = z.object({
   questions: z.array(z.string()),
   raw: ModelOutputSchema,
   usage: z.object({ input: z.number(), output: z.number() }).optional(),
+  /** 按计费类别拆开的 token：普通输入 / 缓存写入 / 缓存命中 / 输出。评测算成本用 */
+  usageDetail: z.object({ input: z.number(), cacheWrite: z.number(), cacheRead: z.number(), output: z.number() }).optional(),
 });
 export type ExtractResponse = z.infer<typeof ExtractResponseSchema>;

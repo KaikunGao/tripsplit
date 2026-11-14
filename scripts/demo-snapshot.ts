@@ -23,7 +23,7 @@ const PLAN: Record<string, { reconcile?: boolean; search?: boolean; report?: boo
 
 async function main() {
   const { MODEL } = await import("../lib/claude");
-  const { reconcile } = await import("../lib/agent/run");
+  const { runReconcile: reconcile } = await import("../lib/agent/pipeline");
   const { search } = await import("../lib/search/answer");
   const { report } = await import("../lib/report");
   const seed = SEED();

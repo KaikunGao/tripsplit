@@ -95,11 +95,11 @@ npm run cf:deploy
 | `lib/extract/` | 多模态录入：提示词、输出 schema、置信度决策 |
 | `lib/import/` | 支付宝 / 微信账单 CSV 解析，账单与订单文本的模型整理 |
 | `lib/search/` | 检索（分词、TF-IDF、条件过滤）与回答生成 |
-| `lib/agent/` | 核账 Agent 工具集与循环 |
+| `lib/agent/` | 核账：只读工具集、固定流程（`pipeline.ts`，默认）和 Agent 循环（`run.ts`） |
 | `lib/report.ts` `lib/export.ts` | 聚合 + 叙述；CSV / 图片卡片 / 打印 PDF |
 | `lib/voice.ts` | 录音、服务端转写、离线队列 |
 | `lib/db.ts` `lib/telemetry.ts` | libsql 连接与建表；模型调用遥测与成本估算 |
 | `eval/` `scripts/eval.ts` | 录入解析评测集与评测脚本 |
 | `components/` | 面板与通用组件 |
 
-录入解析默认 `claude-sonnet-5-5`（2026-11-10 的 100 例评测里与 opus 同准、成本 19%，见 `docs/评测-2026-11-10.md`），核账 / 检索 / 报告 / 导入默认 `claude-opus-5-5`；`TRIPSPLIT_MODEL` 一次覆盖全部，`TRIPSPLIT_EXTRACT_MODEL` 只覆盖录入，`TRIPSPLIT_EFFORT` 调 effort。
+录入解析默认 `claude-sonnet-5-5`（100 例评测里与 opus 通过率相当，单条成本约 1.0 对 2.2 美分，见 `docs/评测-2026-11-10.md`）。核账默认是固定流程加 `claude-opus-5-5`：代码跑完四项检查，模型只调用一次；对照评测里它和 Agent 循环查出的一样多、便宜约两成，见 `docs/评测-核账-2026-11-13.md`，设 `TRIPSPLIT_RECONCILE_MODE=agent` 可切回 Agent 循环，`TRIPSPLIT_RECONCILE_MODEL` 换模型。检索 / 报告 / 导入默认 `claude-opus-5-5`；`TRIPSPLIT_MODEL` 一次覆盖全部，`TRIPSPLIT_EXTRACT_MODEL` 只覆盖录入，`TRIPSPLIT_EFFORT` 调 effort。

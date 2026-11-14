@@ -96,5 +96,6 @@ export async function extract(req: ExtractRequest): Promise<ExtractResponse> {
   if (res.stop_reason === "refusal") throw new Error("模型拒绝处理该输入");
   const out = res.parsed_output;
   if (!out) throw new Error("模型输出不符合结构");
-  return { ...decide(req.trip, out), usage: { input: res.usage.input_tokens + (res.usage.cache_read_input_tokens ?? 0) + (res.usage.cache_creation_input_tokens ?? 0), output: res.usage.output_tokens } };
+  const u = { input: res.usage.input_tokens, cacheWrite: res.usage.cache_creation_input_tokens ?? 0, cacheRead: res.usage.cache_read_input_tokens ?? 0, output: res.usage.output_tokens };
+  return { ...decide(req.trip, out), usage: { input: u.input + u.cacheRead + u.cacheWrite, output: u.output }, usageDetail: u };
 }

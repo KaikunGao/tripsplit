@@ -21,7 +21,7 @@ type Case = { id: string; kind: "text" | "voice"; text: string; tags?: string[];
 
 async function main() {
   const { EXTRACT_MODEL: MODEL } = await import("../lib/claude");
-  const { estimateCost } = await import("../lib/telemetry");
+  const { estimateCost, estimateCostDetailed } = await import("../lib/telemetry");
   const argv = process.argv.slice(2);
   const opt = (name: string) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
   const casesFile = opt("--cases") ?? "eval/cases.json";
@@ -37,6 +37,7 @@ async function main() {
   const n = { decision: 0, amount: 0, payer: 0, participants: 0, category: 0, treat: 0 };
   let input = 0;
   let output = 0;
+  const detail = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
   const t0 = Date.now();
 
   for (const c of list) {
@@ -45,6 +46,7 @@ async function main() {
       const r = await extract({ trip, kind: c.kind, text: c.text });
       input += r.usage?.input ?? 0;
       output += r.usage?.output ?? 0;
+      if (r.usageDetail) for (const k of ["input", "cacheWrite", "cacheRead", "output"] as const) detail[k] += r.usageDetail[k];
       const got = {
         decision: r.decision,
         amount: r.draft.amount ?? null,
@@ -104,7 +106,14 @@ async function main() {
     category_acc: pct("category"),
     treat_acc: pct("treat"),
     tokens: { input, output },
-    cost_usd: estimateCost(MODEL, input, output),
+    /* 三种口径（2026-11-13 起）：
+       cost_usd       本次实测：按计费类别分开算，含缓存折扣。评测是连着跑的，系统提示几乎每条都命中缓存，所以是下界。
+       cost_usd_cold  每条都没命中缓存时的成本：系统提示按缓存写入价算。真实用户隔很久才记一笔，更接近这个数。
+       cost_usd_flat  不开缓存、全部按普通输入价算。 */
+    tokens_detail: detail,
+    cost_usd: estimateCostDetailed(MODEL, detail),
+    cost_usd_cold: estimateCostDetailed(MODEL, { input: detail.input, cacheWrite: detail.cacheWrite + detail.cacheRead, cacheRead: 0, output: detail.output }),
+    cost_usd_flat: estimateCost(MODEL, input, output),
     ms: Date.now() - t0,
     byKind,
     byTag,
