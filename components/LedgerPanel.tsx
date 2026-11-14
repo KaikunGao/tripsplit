@@ -131,7 +131,7 @@ export function LedgerPanel({ trip, expenses, audit }: { trip: Trip; expenses: E
               {audit.map((a) => (
                 <li key={a.id} className="flex gap-2">
                   <span className="mono shrink-0 text-ink-400">{localStamp(a.at)}</span>
-                  <Badge tone={a.origin === "user" ? "gray" : "brand"}>{a.origin === "user" ? "用户" : a.origin === "agent-confirmed" ? "Agent 建议·已确认" : "检索建议·已确认"}</Badge>
+                  <Badge tone={a.origin === "user" ? "gray" : "brand"}>{a.origin === "user" ? "用户" : a.origin === "agent-confirmed" ? "核账建议·已确认" : "检索建议·已确认"}</Badge>
                   <span>{a.summary}</span>
                 </li>
               ))}

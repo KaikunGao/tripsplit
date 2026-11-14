@@ -4,8 +4,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TripSplit · 旅游分账 Agent",
-  description: "多人自由行 AA 记账助手：多模态录入、历史账目检索、核账 Agent、最少转账结算。",
+  title: "TripSplit · 旅游分账助手",
+  description: "多人自由行 AA 记账助手：多模态录入、历史账目检索、核账、最少转账结算。",
   applicationName: "TripSplit",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "TripSplit", statusBarStyle: "default" },
@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="flex items-center gap-2 font-bold">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-white">T</span>
               TripSplit
-              <span className="hidden text-sm font-normal text-ink-400 sm:inline">旅游分账 Agent</span>
+              <span className="hidden text-sm font-normal text-ink-400 sm:inline">旅游分账助手</span>
             </Link>
             <nav className="flex items-center gap-1 text-sm text-ink-600">
               <Link href="/about" className="rounded-xl px-2.5 py-1.5 hover:bg-ink-100 hover:text-ink-900">

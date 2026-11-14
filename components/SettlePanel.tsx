@@ -44,7 +44,7 @@ export function SettlePanel({ trip, expenses, onReconcile }: { trip: Trip; expen
       {pending > 0 && <div className="rounded-xl bg-warn-100 p-3 text-sm text-warn-700">还有 {pending} 笔待补全的消费未计入结算，建议先在账本里补全或删除。</div>}
       {onReconcile && !trip.locked && (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-brand-50 p-3 text-sm text-brand-700">
-          <span>账本自上次核账后有改动，结算前建议让 Agent 再查一遍重复和异常。</span>
+          <span>账本自上次核账后有改动，结算前建议再核一遍账，查查重复和异常。</span>
           <button className="btn btn-primary btn-sm shrink-0" onClick={onReconcile}>
             <Icon name="shield" className="h-3.5 w-3.5" /> 先核账
           </button>

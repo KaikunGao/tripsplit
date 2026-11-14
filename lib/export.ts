@@ -35,7 +35,7 @@ export function exportLedgerCsv(trip: Trip, expenses: Expense[]) {
       { equal: "均摊", shares: "按份数", percent: "按比例", exact: "指定金额" }[e.split?.mode ?? (e.shares ? "shares" : "equal")],
       e.treat ? "是" : "",
       e.status === "pending" ? "待补全" : "已入账",
-      { manual: "手动", text: "文字", image: "截图", voice: "语音", agent: "Agent" }[e.source],
+      { manual: "手动", text: "文字", image: "截图", voice: "语音", agent: "核账" }[e.source],
       e.confidence,
       e.evidence?.text ?? "",
     ]);
@@ -97,7 +97,7 @@ export async function shareSettlementCard(trip: Trip, transfers: Transfer[], pai
   }
   g.fillStyle = "#8b8ba3";
   g.font = "13px system-ui, -apple-system, 'PingFang SC', sans-serif";
-  g.fillText("由 TripSplit 旅游分账 Agent 生成 · 最少转账方案", 48, H - 44);
+  g.fillText("由 TripSplit 旅游分账助手生成 · 最少转账方案", 48, H - 44);
 
   const blob: Blob = await new Promise((res) => c.toBlob((b) => res(b!), "image/png"));
   const file = new File([blob], `${trip.name}-结算.png`, { type: "image/png" });

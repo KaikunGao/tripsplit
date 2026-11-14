@@ -113,7 +113,7 @@ function DemoGuide({ trips }: { trips: Trip[] }) {
   const steps: { href: string; icon: IconName; title: string; text: string }[] = [
     ...(has(DEMO_TRIP_ID)
       ? [
-          { href: `/trip/${DEMO_TRIP_ID}?tab=reconcile`, icon: "shield" as const, title: "看 Agent 核账", text: "成都这趟刚玩完还没对账。Agent 查出了记了两次的火锅、多打一个 0 的包车，逐条确认后预算和结算跟着变。" },
+          { href: `/trip/${DEMO_TRIP_ID}?tab=reconcile`, icon: "shield" as const, title: "看一次核账", text: "成都这趟刚玩完还没对账。核账查出了记了两次的火锅、多打一个 0 的包车，逐条确认后预算和结算跟着变。" },
           { href: `/trip/${DEMO_TRIP_ID}?tab=search`, icon: "search" as const, title: "用一句话问账本", text: "「第一天晚上那顿火锅是谁付的？」回答会带上对应的账目，也可以直接说「把那笔改成大家平摊」。" },
         ]
       : []),

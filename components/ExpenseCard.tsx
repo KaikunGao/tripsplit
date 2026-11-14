@@ -5,7 +5,7 @@ import { hhmm, money } from "@/lib/format";
 import { homeAmount, memberName } from "@/lib/settle";
 import type { Expense, Trip } from "@/lib/types";
 
-export const SOURCE_LABEL: Record<Expense["source"], string> = { manual: "手动", text: "文字", image: "截图", voice: "语音", agent: "Agent" };
+export const SOURCE_LABEL: Record<Expense["source"], string> = { manual: "手动", text: "文字", image: "截图", voice: "语音", agent: "核账" };
 
 /**
  * 账目卡：只显示"需要你处理"的状态（待补全 / 参与人为空 / 不在行程日期内），

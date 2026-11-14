@@ -115,7 +115,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
 
       {!busy && !res && expenses.length === 0 && (
         <div className="card">
-          <Empty icon={<Icon name="shield" className="h-6 w-6" />} title="还没有可核的账" hint="先录几笔消费，再让 Agent 来查重、查漏、查异常。" compact />
+          <Empty icon={<Icon name="shield" className="h-6 w-6" />} title="还没有可核的账" hint="先录几笔消费，再来查重、查漏、查异常。" compact />
         </div>
       )}
 
@@ -126,7 +126,7 @@ export function ReconcilePanel({ trip, expenses, autoRun = false }: { trip: Trip
             title="结论"
             right={
               <span className="hidden text-xs text-ink-400 sm:inline">
-                {res.mode === "pipeline" ? `${res.trace.filter((t) => t.kind === "tool").length} 项检查 · 1 次模型调用` : `${res.usage.turns} 轮 · ${res.trace.filter((t) => t.kind === "tool").length} 次工具调用`}
+                {res.mode === "pipeline" ? `${res.trace.filter((t) => t.kind === "tool" && t.name !== "get_trip" && t.name !== "list_expenses").length} 项检查 · 1 次模型调用` : `${res.usage.turns} 轮 · ${res.trace.filter((t) => t.kind === "tool").length} 次工具调用`}
               </span>
             }
           >
@@ -197,7 +197,7 @@ function FindingCard({ f, trip, byId, open, onToggle, applied, onApply, onIgnore
   const [reason, setReason] = useState("");
   const ignoreUi = (
     <div className="mt-2 space-y-2 rounded-xl bg-paper p-3 text-sm">
-      <p className="text-xs text-ink-600">为什么忽略？写一句，下次 Agent 就不再报这种情况（可不填）。</p>
+      <p className="text-xs text-ink-600">为什么忽略？写一句，下次核账就不再报这种情况（可不填）。</p>
       <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={`例：${f.type === "payer" ? "阿强只付钱不吃，是请客" : f.type === "duplicate" ? "这两笔确实是两顿" : "这笔没问题"}`} autoFocus />
       <div className="flex flex-wrap gap-1.5">
         <button className="btn btn-ghost btn-sm" onClick={() => onIgnore(reason, "trip")} disabled={!reason.trim()}>
@@ -308,13 +308,13 @@ function RulesSection({ trip, habits }: { trip: Trip; habits: string[] }) {
     <section className="card p-4">
       <button type="button" className="flex w-full items-center justify-between text-left" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <span className="font-semibold">
-          Agent 记忆 <span className="ml-1 text-xs font-normal text-ink-400">本次规则 {rules.length} · 长期习惯 {habits.length}</span>
+          核账记忆 <span className="ml-1 text-xs font-normal text-ink-400">本次规则 {rules.length} · 长期习惯 {habits.length}</span>
         </span>
         <Icon name="chevron" className={`h-4 w-4 text-ink-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="mt-3 space-y-3 text-sm">
-          <p className="text-xs text-ink-400">忽略建议时填写的理由会落到这里：本次规则只影响这次旅行的核账；长期习惯会同时喂给录入解析和核账 Agent。</p>
+          <p className="text-xs text-ink-400">忽略建议时填写的理由会落到这里：本次规则只影响这次旅行的核账；长期习惯会同时喂给录入解析和核账。</p>
           <div>
             <h4 className="mb-1 text-xs font-semibold text-ink-400">本次旅行规则</h4>
             {rules.length === 0 && <p className="text-xs text-ink-400">暂无</p>}
