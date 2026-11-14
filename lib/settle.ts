@@ -9,10 +9,14 @@ export const round2 = (n: number) => Math.round(n * 100) / 100;
 export const homeAmount = (e: Pick<Expense, "amount" | "rate">) => round2(e.amount * (e.rate ?? 1));
 
 /**
- * 每人应分摊份额（本币）。规则优先级：split > 旧 shares > 均摊。
- * 分到分，余数给最后一个参与人，保证合计等于金额。付款人不在参与人内时不分摊（请客）。
+ * 每人应分摊份额（本币）。规则优先级：请客 > split > 旧 shares > 均摊。
+ * 分到分，余数给最后一个参与人，保证合计等于金额。
+ * 请客（treat=true）：这笔全额记在付款人自己头上，被请的人一分不欠；participantIds 只是记下请了谁。
+ * 没标请客而付款人不在参与人里，是替别人垫付：参与人照摊，付款人不摊。
+ * （2026-11-13 之前这里没有读 treat，请客被算成了垫付：被请的人平摊全款。评测复查时发现并改正。）
  */
 export function splitOf(e: Expense): Record<string, number> {
+  if (e.treat) return { [e.payerId]: homeAmount(e) };
   const ids = e.participantIds;
   if (ids.length === 0) return {};
   const total = homeAmount(e);

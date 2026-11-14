@@ -170,7 +170,7 @@ export function ExpenseForm({
         </Field>
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-ink-600">
           <input type="checkbox" checked={treat} onChange={(e) => toggleTreat(e.target.checked)} className="h-4 w-4 accent-brand-600" />
-          请客：付款人自己不分摊
+          请客：这笔付款人自己出，其他人不用分
         </label>
       </div>
 
@@ -220,8 +220,8 @@ export function ExpenseForm({
         )}
         {mode === "equal" && preview && participantIds.length > 0 && (
           <p className="mt-1 text-xs text-ink-400">
-            每人 {money(preview[participantIds[0]] ?? 0, trip.currency)}
-            {foreign ? `（按汇率折算，合计 ${money(homeAmount(draft), trip.currency)}）` : ""}
+            {treat ? `请客：${trip.members.find((m) => m.id === payerId)?.name ?? "付款人"}承担 ${money(homeAmount(draft), trip.currency)}，被请的人不用出` : `每人 ${money(preview[participantIds[0]] ?? 0, trip.currency)}`}
+            {!treat && foreign ? `（按汇率折算，合计 ${money(homeAmount(draft), trip.currency)}）` : ""}
           </p>
         )}
       </Field>

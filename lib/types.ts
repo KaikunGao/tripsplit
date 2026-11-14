@@ -30,7 +30,7 @@ export type Split = z.infer<typeof SplitSchema>;
 
 /**
  * 一笔消费。参与人默认均摊；split 描述不均摊规则；treat=true 表示"请客"：
- * 付款人有意不参与分摊（核账时不再当作异常）。
+ * 这笔全额由付款人自己承担，被请的人不欠钱；participantIds 记的是被请的人（核账时不当作异常）。
  * 币种可与旅行本币不同，rate 是 1 单位该币种折合多少本币；结算一律按本币。
  */
 export const ExpenseSchema = z.object({

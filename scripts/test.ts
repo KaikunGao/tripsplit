@@ -34,10 +34,13 @@ const [ming, hua, qiang, lin] = trip.members.map((m) => m.id);
   // 外币：按汇率折算后再分
   const fx = splitOf({ ...e, amount: 3000, currency: "JPY", rate: 0.048, participantIds: [ming, hua] });
   assert.deepEqual([fx[ming], fx[hua]], [72, 72]);
-  // 请客：付款人不在参与人里，不分摊
+  // 请客：全额由付款人自己承担，被请的人不欠钱
   const tr = splitOf({ ...e, payerId: lin, treat: true, participantIds: [ming, hua] });
-  assert.equal(tr[lin], undefined);
-  assert.equal(tr[ming] + tr[hua], 100);
+  assert.deepEqual(tr, { [lin]: 100 });
+  // 垫付（没标请客、付款人不在参与人里）：参与人照摊，付款人不摊
+  const adv = splitOf({ ...e, payerId: lin, participantIds: [ming, hua] });
+  assert.equal(adv[lin], undefined);
+  assert.equal(adv[ming] + adv[hua], 100);
 }
 
 // --- settlePlan: 标记已转后剩余转账减少，全部转完 allClear
